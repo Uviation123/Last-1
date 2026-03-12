@@ -47,6 +47,7 @@ private struct PainPointRow: View {
     let point: OnboardingPainPoint
     let isSelected: Bool
     let action: () -> Void
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         Button(action: action) {
@@ -54,17 +55,17 @@ private struct PainPointRow: View {
                 // Icon
                 ZStack {
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(isSelected ? Color.appPrimary.opacity(0.15) : Color.appSecondary)
+                        .fill(isSelected ? Color.appAccent(colorScheme).opacity(0.15) : Color.appSurfaceSecondary(colorScheme))
                         .frame(width: 38, height: 38)
                     Image(systemName: point.icon)
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(isSelected ? Color.appPrimary : Color.appMuted)
+                        .foregroundStyle(isSelected ? Color.appAccent(colorScheme) : Color.appMutedText(colorScheme))
                 }
 
                 // Label
                 Text(point.label)
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(isSelected ? Color.appForeground : Color.appMuted)
+                    .foregroundStyle(isSelected ? Color.appPrimaryText(colorScheme) : Color.appMutedText(colorScheme))
 
                 Spacer()
 
@@ -72,14 +73,14 @@ private struct PainPointRow: View {
                 ZStack {
                     Circle()
                         .strokeBorder(
-                            isSelected ? Color.appPrimary : Color.appBorder,
+                            isSelected ? Color.appAccent(colorScheme) : Color.appBorderDynamic(colorScheme),
                             lineWidth: 1.5
                         )
                         .frame(width: 22, height: 22)
 
                     if isSelected {
                         Circle()
-                            .fill(Color.appPrimary)
+                            .fill(Color.appAccent(colorScheme))
                             .frame(width: 14, height: 14)
                             .transition(.scale.combined(with: .opacity))
                     }
@@ -89,11 +90,11 @@ private struct PainPointRow: View {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? Color.appPrimary.opacity(0.06) : Color.appCard)
+                    .fill(isSelected ? Color.appAccent(colorScheme).opacity(0.06) : Color.appSurface(colorScheme))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .strokeBorder(
-                                isSelected ? Color.appPrimary.opacity(0.4) : Color.appBorder.opacity(0.3),
+                                isSelected ? Color.appAccent(colorScheme).opacity(0.4) : Color.appBorderDynamic(colorScheme).opacity(0.3),
                                 lineWidth: 1
                             )
                     )

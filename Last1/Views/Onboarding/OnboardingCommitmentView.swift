@@ -45,11 +45,12 @@ private struct CommitmentCard: View {
     let level: CommitmentLevel
     let isSelected: Bool
     let action: () -> Void
+    @Environment(\.colorScheme) var colorScheme
 
     private var accentColor: Color {
         switch level {
         case .light:    return Color(red: 0.4, green: 0.8, blue: 1.0)
-        case .moderate: return Color.appPrimary
+        case .moderate: return Color.appAccent(colorScheme)
         case .allIn:    return Color(red: 1.0, green: 0.6, blue: 0.3)
         }
     }
@@ -61,7 +62,7 @@ private struct CommitmentCard: View {
                 VStack(spacing: 4) {
                     ForEach(0..<3) { i in
                         Circle()
-                            .fill(i < level.barCount ? accentColor : Color.appSecondary)
+                            .fill(i < level.barCount ? accentColor : Color.appSurfaceSecondary(colorScheme))
                             .frame(width: 8, height: 8)
                     }
                 }
@@ -69,10 +70,10 @@ private struct CommitmentCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(level.label)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(isSelected ? Color.appForeground : Color.appMuted)
+                        .foregroundStyle(isSelected ? Color.appPrimaryText(colorScheme) : Color.appMutedText(colorScheme))
                     Text(level.description)
                         .font(.system(size: 13))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                         .lineLimit(2)
                 }
 
@@ -82,7 +83,7 @@ private struct CommitmentCard: View {
                 ZStack {
                     Circle()
                         .strokeBorder(
-                            isSelected ? accentColor : Color.appBorder,
+                            isSelected ? accentColor : Color.appBorderDynamic(colorScheme),
                             lineWidth: 1.5
                         )
                         .frame(width: 22, height: 22)
@@ -99,11 +100,11 @@ private struct CommitmentCard: View {
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(isSelected ? accentColor.opacity(0.07) : Color.appCard)
+                    .fill(isSelected ? accentColor.opacity(0.07) : Color.appSurface(colorScheme))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
                             .strokeBorder(
-                                isSelected ? accentColor.opacity(0.5) : Color.appBorder.opacity(0.3),
+                                isSelected ? accentColor.opacity(0.5) : Color.appBorderDynamic(colorScheme).opacity(0.3),
                                 lineWidth: 1.5
                             )
                     )
@@ -134,10 +135,12 @@ private struct IntensityBarsView: View {
         }
     }
 
+    @Environment(\.colorScheme) var colorScheme
+
     private var barColor: Color {
         switch level {
         case .light:    return Color(red: 0.4, green: 0.8, blue: 1.0)
-        case .moderate: return Color.appPrimary
+        case .moderate: return Color.appAccent(colorScheme)
         case .allIn:    return Color(red: 1.0, green: 0.6, blue: 0.3)
         }
     }
@@ -148,7 +151,7 @@ private struct IntensityBarsView: View {
                 .font(.system(size: 11, weight: .semibold))
                 .tracking(0.8)
                 .textCase(.uppercase)
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
 
             GeometryReader { geo in
                 let barWidth: CGFloat = (geo.size.width - CGFloat(barHeights.count - 1) * 8) / CGFloat(barHeights.count)

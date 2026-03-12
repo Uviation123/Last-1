@@ -8,6 +8,7 @@ struct OnboardingIdentityView: View {
     var onNext: () -> Void
 
     @Environment(OnboardingViewModel.self) private var vm
+    @Environment(\.colorScheme) private var colorScheme
     @FocusState private var focusedField: IdentityField?
 
     enum IdentityField { case current, desired }
@@ -35,8 +36,8 @@ struct OnboardingIdentityView: View {
                     label: "I currently am…",
                     placeholder: "Someone who struggles with consistency",
                     icon: "person.fill",
-                    iconColor: Color.appMuted,
-                    borderColor: focusedField == .current ? Color.appPrimary.opacity(0.6) : Color.appBorder.opacity(0.4),
+                    iconColor: Color.appMutedText(colorScheme),
+                    borderColor: focusedField == .current ? Color.appAccent(colorScheme).opacity(0.6) : Color.appBorderDynamic(colorScheme).opacity(0.4),
                     text: $vm.currentIdentity,
                     isFocused: focusedField == .current
                 )
@@ -53,8 +54,8 @@ struct OnboardingIdentityView: View {
                     label: "I want to become…",
                     placeholder: "Someone who shows up every single day",
                     icon: "star.fill",
-                    iconColor: Color.appPrimary,
-                    borderColor: focusedField == .desired ? Color.appPrimary.opacity(0.8) : Color.appBorder.opacity(0.4),
+                    iconColor: Color.appAccent(colorScheme),
+                    borderColor: focusedField == .desired ? Color.appAccent(colorScheme).opacity(0.8) : Color.appBorderDynamic(colorScheme).opacity(0.4),
                     text: $vm.desiredIdentity,
                     isFocused: focusedField == .desired
                 )
@@ -77,10 +78,10 @@ struct OnboardingIdentityView: View {
         HStack(spacing: 8) {
             Image(systemName: "sparkles")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.appPrimary)
+                .foregroundStyle(Color.appAccent(colorScheme))
             Text("Your transformation starts with today's 1%.")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
         }
         .padding(.top, 4)
     }
@@ -95,6 +96,7 @@ private struct IdentityCard: View {
     let borderColor: Color
     @Binding var text: String
     let isFocused: Bool
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -106,22 +108,26 @@ private struct IdentityCard: View {
                     .font(.system(size: 11, weight: .semibold))
                     .tracking(0.8)
                     .textCase(.uppercase)
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
 
             TextField(placeholder, text: $text, axis: .vertical)
                 .font(.system(size: 15))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
                 .lineLimit(2...4)
-                .tint(Color.appPrimary)
+                .tint(Color.appAccent(colorScheme))
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(isFocused ? Color.appCard.opacity(1.0) : Color.appCard)
+                .fill(Color.appSurface(colorScheme))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .strokeBorder(borderColor, lineWidth: 1.5)
+                )
+                .shadow(
+                    color: colorScheme == .light ? .black.opacity(0.06) : .clear,
+                    radius: 8, y: 2
                 )
         )
         .animation(.easeInOut(duration: 0.2), value: isFocused)
@@ -134,33 +140,34 @@ private struct IdentityCard: View {
 private struct TransformArrow: View {
     let activated: Bool
 
+    @Environment(\.colorScheme) var colorScheme
     @State private var arrowBounce = false
 
     var body: some View {
         HStack(spacing: 10) {
             Rectangle()
-                .fill(activated ? Color.appPrimary.opacity(0.3) : Color.appBorder.opacity(0.3))
+                .fill(activated ? Color.appAccent(colorScheme).opacity(0.3) : Color.appBorderDynamic(colorScheme).opacity(0.3))
                 .frame(height: 1)
 
             VStack(spacing: 4) {
                 Image(systemName: "arrow.down")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(activated ? Color.appPrimary : Color.appMuted.opacity(0.5))
+                    .foregroundStyle(activated ? Color.appAccent(colorScheme) : Color.appMutedText(colorScheme).opacity(0.5))
                     .scaleEffect(activated && arrowBounce ? 1.15 : 1.0)
-                    .shadow(color: activated ? Color.appPrimary.opacity(0.6) : .clear, radius: 6)
+                    .shadow(color: activated ? Color.appAccent(colorScheme).opacity(0.6) : .clear, radius: 6)
 
                 if activated {
                     Text("Your journey")
                         .font(.system(size: 10, weight: .semibold))
                         .tracking(0.5)
                         .textCase(.uppercase)
-                        .foregroundStyle(Color.appPrimary.opacity(0.7))
+                        .foregroundStyle(Color.appAccent(colorScheme).opacity(0.7))
                         .transition(.opacity)
                 }
             }
 
             Rectangle()
-                .fill(activated ? Color.appPrimary.opacity(0.3) : Color.appBorder.opacity(0.3))
+                .fill(activated ? Color.appAccent(colorScheme).opacity(0.3) : Color.appBorderDynamic(colorScheme).opacity(0.3))
                 .frame(height: 1)
         }
         .padding(.horizontal, 8)

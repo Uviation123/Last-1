@@ -8,6 +8,7 @@ struct Last1App: App {
     @State private var subscriptionViewModel = SubscriptionViewModel()
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("appearanceMode") private var appearanceModeRaw: String = AppearanceMode.dark.rawValue
+    @Environment(\.scenePhase) private var scenePhase
 
     private var preferredColorScheme: ColorScheme? {
         (AppearanceMode(rawValue: appearanceModeRaw) ?? .dark).colorScheme
@@ -31,6 +32,14 @@ struct Last1App: App {
                 }
             }
             .preferredColorScheme(preferredColorScheme)
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active {
+                    // Refresh the smart reminder schedule each time the app comes to
+                    // the foreground so notifications are always up to date, and any
+                    // day the user already logged will be skipped automatically.
+                    NotificationService.shared.refreshDailyReminders()
+                }
+            }
             .onOpenURL { url in
                 GIDSignIn.sharedInstance.handle(url)
                 Task {

@@ -3,12 +3,15 @@ import Charts
 
 struct GrowthView: View {
     @Environment(AuthViewModel.self) var authVM
+    @Environment(SubscriptionViewModel.self) private var subVM
+    @Environment(\.colorScheme) var colorScheme
     @State private var viewModel = GrowthViewModel()
     @State private var chartProgress: Double = 0
+    @State private var showProPaywall = false
 
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            Color.appBackground(colorScheme).ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 12) {
@@ -45,6 +48,10 @@ struct GrowthView: View {
         }
         .task {
             if let userId = authVM.currentUserId {
+                // Free users are locked to the 7-day view
+                if !subVM.isSubscribed {
+                    viewModel.selectedRange = .week
+                }
                 await viewModel.loadData(userId: userId)
             }
         }
@@ -52,6 +59,10 @@ struct GrowthView: View {
             if let userId = authVM.currentUserId {
                 await viewModel.loadData(userId: userId)
             }
+        }
+        .sheet(isPresented: $showProPaywall) {
+            OnboardingPaywallView(onComplete: { showProPaywall = false })
+                .environment(subVM)
         }
     }
 
@@ -62,11 +73,11 @@ struct GrowthView: View {
             Text("Your Growth")
                 .font(.system(size: 24, weight: .bold))
                 .tracking(-0.3)
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
 
             Text("Track your progress over time")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -94,42 +105,60 @@ struct GrowthView: View {
                              : "\(growthTrendPercent)%")
                             .font(.system(size: 12, weight: .medium))
                     }
-                    .foregroundStyle(growthTrendPercent >= 0 ? Color.appPrimary : Color.appDestructive)
+                    .foregroundStyle(growthTrendPercent >= 0 ? Color.appAccent(colorScheme) : Color.appDestructive)
                 }
             }
 
             // Time range picker
             HStack(spacing: 0) {
                 ForEach(TimeRange.allCases, id: \.self) { range in
+                    let isLocked = !subVM.isSubscribed && range != .week
                     Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            viewModel.selectedRange = range
-                            viewModel.selectedDataPoint = nil
-                            chartProgress = 0
-                        }
-                        withAnimation(.easeInOut(duration: 1.0).delay(0.1)) {
-                            chartProgress = 1.0
+                        if isLocked {
+                            showProPaywall = true
+                        } else {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                viewModel.selectedRange = range
+                                viewModel.selectedDataPoint = nil
+                                chartProgress = 0
+                            }
+                            withAnimation(.easeInOut(duration: 1.0).delay(0.1)) {
+                                chartProgress = 1.0
+                            }
                         }
                     } label: {
-                        Text(range.rawValue)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(viewModel.selectedRange == range
-                                             ? Color.appBackground
-                                             : Color.appMuted)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
-                            .background(
-                                viewModel.selectedRange == range
-                                    ? Color.appPrimary
-                                    : Color.clear
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        ZStack(alignment: .topTrailing) {
+                            Text(range.rawValue)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(
+                                    isLocked
+                                        ? Color.appMutedText(colorScheme).opacity(0.4)
+                                        : viewModel.selectedRange == range
+                                            ? Color.appButtonLabel(colorScheme)
+                                            : Color.appMutedText(colorScheme)
+                                )
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .background(
+                                    viewModel.selectedRange == range && !isLocked
+                                        ? Color.appAccent(colorScheme)
+                                        : Color.clear
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+
+                            if isLocked {
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 7, weight: .bold))
+                                    .foregroundStyle(Color.appAccent(colorScheme))
+                                    .offset(x: -2, y: 2)
+                            }
+                        }
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(3)
-            .background(Color.appSecondary)
+            .background(Color.appSurfaceSecondary(colorScheme))
             .clipShape(RoundedRectangle(cornerRadius: 9))
 
             // Chart
@@ -142,7 +171,7 @@ struct GrowthView: View {
                     )
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [Color.appPrimary.opacity(0.25), Color.appPrimary.opacity(0)],
+                            colors: [Color.appAccent(colorScheme).opacity(0.25), Color.appAccent(colorScheme).opacity(0)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -156,7 +185,7 @@ struct GrowthView: View {
                         x: .value("Date", point.date),
                         y: .value("Effort", point.effortLevel)
                     )
-                    .foregroundStyle(Color.appPrimary)
+                    .foregroundStyle(Color.appAccent(colorScheme))
                     .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                     .interpolationMethod(.catmullRom)
                 }
@@ -180,31 +209,31 @@ struct GrowthView: View {
                 let avg = viewModel.filteredAverageEffort
                 if avg > 0 {
                     RuleMark(y: .value("Average", avg))
-                        .foregroundStyle(Color.appMuted.opacity(0.5))
+                        .foregroundStyle(Color.appMutedText(colorScheme).opacity(0.5))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                         .annotation(position: .trailing, alignment: .center) {
                             Text("Avg")
                                 .font(.system(size: 9))
-                                .foregroundStyle(Color.appMuted)
+                                .foregroundStyle(Color.appMutedText(colorScheme))
                         }
                 }
             }
             .chartXAxis {
                 AxisMarks(values: xAxisValues) { value in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4))
-                        .foregroundStyle(Color.appBorder.opacity(0.4))
+                        .foregroundStyle(Color.appBorderDynamic(colorScheme).opacity(0.4))
                     AxisValueLabel(format: xAxisDateFormat, centered: false)
                         .font(.system(size: 10))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                 }
             }
             .chartYAxis {
                 AxisMarks(values: [1, 2, 3, 4, 5]) { value in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4))
-                        .foregroundStyle(Color.appBorder.opacity(0.4))
+                        .foregroundStyle(Color.appBorderDynamic(colorScheme).opacity(0.4))
                     AxisValueLabel()
                         .font(.system(size: 10))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                 }
             }
             .chartYScale(domain: 0.5...5.5)
@@ -255,7 +284,7 @@ struct GrowthView: View {
                                     .frame(width: 7, height: 7)
                                 Text(cat.displayName)
                                     .font(.system(size: 10))
-                                    .foregroundStyle(Color.appMuted)
+                                    .foregroundStyle(Color.appMutedText(colorScheme))
                             }
                         }
                     }
@@ -272,7 +301,7 @@ struct GrowthView: View {
         VStack(spacing: 3) {
             Text(point.date, format: .dateTime.month(.abbreviated).day())
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
 
             HStack(spacing: 3) {
                 Image(systemName: point.category.icon)
@@ -283,8 +312,8 @@ struct GrowthView: View {
                         Image(systemName: star <= point.effortLevel ? "star.fill" : "star")
                             .font(.system(size: 7))
                             .foregroundStyle(star <= point.effortLevel
-                                             ? Color.appPrimary
-                                             : Color.appMuted.opacity(0.4))
+                                             ? Color.appAccent(colorScheme)
+                                             : Color.appMutedText(colorScheme).opacity(0.4))
                     }
                 }
             }
@@ -292,16 +321,16 @@ struct GrowthView: View {
             if point.logCount > 1 {
                 Text("\(point.logCount) logs")
                     .font(.system(size: 9))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
-        .background(Color.appCard)
+        .background(Color.appSurface(colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.appBorder, lineWidth: 0.5)
+                .stroke(Color.appBorderDynamic(colorScheme), lineWidth: 0.5)
         )
     }
 
@@ -333,12 +362,12 @@ struct GrowthView: View {
                     .foregroundStyle(iconColor)
                 Text(label)
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
 
             Text(value)
                 .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
@@ -358,24 +387,24 @@ struct GrowthView: View {
                         ZStack {
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(entry.active
-                                      ? Color.appPrimary.opacity(0.2)
-                                      : Color.appSecondary)
+                                      ? Color.appAccent(colorScheme).opacity(0.2)
+                                      : Color.appSurfaceSecondary(colorScheme))
                                 .frame(width: 40, height: 40)
 
                             if entry.active {
                                 Image(systemName: "flame.fill")
                                     .font(.system(size: 15))
-                                    .foregroundStyle(Color.appPrimary)
+                                    .foregroundStyle(Color.appAccent(colorScheme))
                             } else {
                                 Text("—")
                                     .font(.system(size: 14))
-                                    .foregroundStyle(Color.appMuted)
+                                    .foregroundStyle(Color.appMutedText(colorScheme))
                             }
                         }
 
                         Text(entry.day)
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -416,7 +445,7 @@ struct GrowthView: View {
                             .frame(width: 8, height: 8)
                         Text("\(item.category.displayName) \(Int(item.percentage))%")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                         Spacer()
                     }
                 }
@@ -432,15 +461,15 @@ struct GrowthView: View {
         VStack(spacing: 12) {
             Image(systemName: "chart.line.uptrend.xyaxis")
                 .font(.system(size: 44))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
 
             Text("No data yet")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
 
             Text("Start logging daily actions to see your growth")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -451,7 +480,7 @@ struct GrowthView: View {
 
     private var loadingState: some View {
         ProgressView()
-            .tint(Color.appPrimary)
+            .tint(Color.appAccent(colorScheme))
             .padding(40)
     }
 

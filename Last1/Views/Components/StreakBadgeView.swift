@@ -3,6 +3,7 @@ import SwiftUI
 struct StreakBadgeView: View {
     let currentStreak: Int
     let longestStreak: Int
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 24) {
@@ -14,14 +15,16 @@ struct StreakBadgeView: View {
 
                 Text("\(currentStreak)")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
 
                 Text("Current")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
 
             Divider()
                 .frame(height: 50)
+                .overlay(Color.appBorderDynamic(colorScheme))
 
             VStack(spacing: 6) {
                 Image(systemName: "trophy.fill")
@@ -30,14 +33,19 @@ struct StreakBadgeView: View {
 
                 Text("\(longestStreak)")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
 
                 Text("Best")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.appSurface(colorScheme), in: RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(Color.appBorderDynamic(colorScheme).opacity(0.3), lineWidth: 1)
+        )
     }
 }
 

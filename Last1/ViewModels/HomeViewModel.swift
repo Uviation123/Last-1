@@ -4,13 +4,17 @@ import Observation
 @Observable
 class HomeViewModel {
     var todayLog: DailyLog?
+    var recentLogs: [DailyLog] = []
     var streak: Streak?
     var isLoading = false
     var errorMessage: String?
     var showAddLog = false
+    var pendingMilestone: Milestone?
 
     private let logRepo = DailyLogRepository()
     private let streakRepo = StreakRepository()
+
+    var totalLogs: Int = 0
 
     var hasLoggedToday: Bool {
         todayLog != nil
@@ -28,16 +32,34 @@ class HomeViewModel {
         min(Double(currentStreak) / 30.0, 1.0)
     }
 
+    /// True when the user has a log history but missed at least one day before today,
+    /// meaning their streak has been broken. Used to show the recovery card in HomeView.
+    var streakIsBroken: Bool {
+        guard !hasLoggedToday,
+              let lastDate = streak?.lastLogDate else { return false }
+        let yesterday = DateFormatting.daysAgo(1)
+        let today = DateFormatting.todayString()
+        return lastDate != today && lastDate != yesterday
+    }
+
     func loadData(userId: UUID) async {
         isLoading = true
         errorMessage = nil
 
         do {
-            async let logTask = logRepo.fetchTodayLog(userId: userId)
+            async let logTask    = logRepo.fetchTodayLog(userId: userId)
             async let streakTask = streakRepo.fetchStreak(userId: userId)
+            // Fetch all logs in one call — count gives totalLogs, prefix(30) feeds the history list
+            async let allLogsTask = logRepo.fetchRecentLogs(userId: userId, limit: 9999)
 
             todayLog = try await logTask
-            streak = try await streakTask
+            streak   = try await streakTask
+            let allLogs = try await allLogsTask
+            let today   = DateFormatting.todayString()
+            totalLogs   = allLogs.count
+            recentLogs  = Array(allLogs.filter { $0.date != today }.prefix(30))
+            // Persist the total so NotificationService can embed it in the streak-broken alert
+            UserDefaults.standard.set(totalLogs, forKey: "notif_totalLogs")
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -47,7 +69,22 @@ class HomeViewModel {
             await syncPendingFirstLog(userId: userId)
         }
 
+        checkForMilestone()
         isLoading = false
+    }
+
+    // MARK: - Milestone Detection
+
+    private func checkForMilestone() {
+        guard hasLoggedToday else { return }
+        guard let milestone = Milestone.milestone(for: currentStreak) else { return }
+        guard !milestone.hasBeenShown else { return }
+        pendingMilestone = milestone
+    }
+
+    func dismissMilestone() {
+        pendingMilestone?.markAsShown()
+        pendingMilestone = nil
     }
 
     // MARK: - Pending Onboarding Log Sync

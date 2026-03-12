@@ -1,6 +1,18 @@
 import Foundation
 import Supabase
 
+struct DailyLogUpdate: Encodable {
+    let category: LogCategory
+    let effortLevel: Int
+    var note: String?
+
+    enum CodingKeys: String, CodingKey {
+        case category
+        case effortLevel = "effort_level"
+        case note
+    }
+}
+
 struct DailyLogRepository {
     private var client: SupabaseClient { SupabaseManager.client }
 
@@ -48,5 +60,24 @@ struct DailyLogRepository {
             .limit(limit)
             .execute()
             .value
+    }
+
+    func updateLog(id: UUID, update: DailyLogUpdate) async throws -> DailyLog {
+        try await client
+            .from("daily_logs")
+            .update(update)
+            .eq("id", value: id)
+            .select()
+            .single()
+            .execute()
+            .value
+    }
+
+    func deleteLog(id: UUID) async throws {
+        try await client
+            .from("daily_logs")
+            .delete()
+            .eq("id", value: id)
+            .execute()
     }
 }

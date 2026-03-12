@@ -3,14 +3,25 @@ import PhotosUI
 
 struct AddLogView: View {
     @Environment(AuthViewModel.self) var authVM
-    @State private var viewModel = AddLogViewModel()
+    @Environment(SubscriptionViewModel.self) private var subVM
+    @Environment(\.colorScheme) var colorScheme
+    @State private var viewModel: AddLogViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var noteFocused = false
     @State private var showErrorAlert = false
+    @State private var showProPaywall = false
+
+    init(logToEdit: DailyLog? = nil) {
+        if let log = logToEdit {
+            _viewModel = State(initialValue: AddLogViewModel(editing: log))
+        } else {
+            _viewModel = State(initialValue: AddLogViewModel())
+        }
+    }
 
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            Color.appBackground(colorScheme).ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 12) {
@@ -55,8 +66,12 @@ struct AddLogView: View {
         } message: {
             Text(viewModel.errorMessage ?? "Something went wrong. Please try again.")
         }
+        .sheet(isPresented: $showProPaywall) {
+            OnboardingPaywallView(onComplete: { showProPaywall = false })
+                .environment(subVM)
+        }
         .overlay {
-            if viewModel.alreadyLoggedToday {
+            if viewModel.alreadyLoggedToday && !viewModel.isEditing {
                 alreadyLoggedOverlay
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
@@ -68,7 +83,7 @@ struct AddLogView: View {
 
     private var alreadyLoggedOverlay: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            Color.appBackground(colorScheme).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 Spacer()
@@ -76,28 +91,28 @@ struct AddLogView: View {
                 VStack(spacing: 24) {
                     ZStack {
                         Circle()
-                            .fill(Color.appPrimary.opacity(0.15))
+                            .fill(Color.appAccent(colorScheme).opacity(0.15))
                             .frame(width: 88, height: 88)
                         Image(systemName: "checkmark.seal.fill")
                             .font(.system(size: 44))
-                            .foregroundStyle(Color.appPrimary)
+                            .foregroundStyle(Color.appAccent(colorScheme))
                     }
 
                     VStack(spacing: 12) {
                         Text("You showed up today.")
                             .font(.system(size: 26, weight: .bold))
                             .tracking(-0.5)
-                            .foregroundStyle(Color.appForeground)
+                            .foregroundStyle(Color.appPrimaryText(colorScheme))
                             .multilineTextAlignment(.center)
 
                         Text("That's all it takes.")
                             .font(.system(size: 20, weight: .semibold))
-                            .foregroundStyle(Color.appPrimary)
+                            .foregroundStyle(Color.appAccent(colorScheme))
                             .multilineTextAlignment(.center)
 
                         Text("See you tomorrow.")
                             .font(.system(size: 16))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                             .multilineTextAlignment(.center)
                     }
                 }
@@ -109,13 +124,13 @@ struct AddLogView: View {
                 } label: {
                     Text("Done")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color(red: 0.05, green: 0.2, blue: 0.12))
+                        .foregroundStyle(Color.appButtonLabel(colorScheme))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.appPrimary)
-                                .shadow(color: Color.appPrimary.opacity(0.3), radius: 12, y: 4)
+                                .fill(Color.appAccent(colorScheme))
+                                .shadow(color: Color.appAccent(colorScheme).opacity(0.3), radius: 12, y: 4)
                         )
                 }
                 .buttonStyle(.plain)
@@ -130,14 +145,14 @@ struct AddLogView: View {
     private var pageHeader: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Log Your 1%")
+                Text(viewModel.isEditing ? "Edit Log" : "Log Your 1%")
                     .font(.system(size: 22, weight: .bold))
                     .tracking(-0.3)
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
 
-                Text("What did you improve today?")
+                Text(viewModel.isEditing ? "Update your entry" : "What did you improve today?")
                     .font(.system(size: 13))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
 
             Spacer()
@@ -147,12 +162,12 @@ struct AddLogView: View {
             } label: {
                 ZStack {
                     Circle()
-                        .fill(Color.appSecondary)
+                        .fill(Color.appSurfaceSecondary(colorScheme))
                         .frame(width: 32, height: 32)
 
                     Image(systemName: "xmark")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                 }
             }
             .buttonStyle(.plain)
@@ -169,11 +184,11 @@ struct AddLogView: View {
 
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.appSecondary)
+                    .fill(Color.appFieldBackground(colorScheme))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .strokeBorder(
-                                noteFocused ? Color.appPrimary.opacity(0.5) : .clear,
+                                noteFocused ? Color.appAccent(colorScheme).opacity(0.5) : .clear,
                                 lineWidth: 2
                             )
                     )
@@ -181,13 +196,13 @@ struct AddLogView: View {
                 if viewModel.note.isEmpty && !noteFocused {
                     Text("I worked on...")
                         .font(.system(size: 14))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                         .padding(12)
                 }
 
                 TextEditor(text: $viewModel.note)
                     .font(.system(size: 14))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                     .frame(minHeight: 80)
                     .padding(8)
                     .scrollContentBackground(.hidden)
@@ -277,22 +292,22 @@ struct AddLogView: View {
                                 .background(
                                     RoundedRectangle(cornerRadius: 14)
                                         .fill(viewModel.effortInt == level
-                                              ? Color.appPrimary
-                                              : Color.appSecondary)
+                                              ? Color.appAccent(colorScheme)
+                                              : Color.appSurfaceSecondary(colorScheme))
                                 )
                                 .foregroundStyle(viewModel.effortInt == level
-                                                 ? Color(red: 0.05, green: 0.2, blue: 0.12)
-                                                 : Color.appForeground)
+                                                 ? Color.appButtonLabel(colorScheme)
+                                                 : Color.appPrimaryText(colorScheme))
                                 .shadow(
                                     color: viewModel.effortInt == level
-                                        ? Color.appPrimary.opacity(0.3) : .clear,
+                                        ? Color.appAccent(colorScheme).opacity(0.3) : .clear,
                                     radius: 8
                                 )
                                 .scaleEffect(viewModel.effortInt == level ? 1.08 : 1.0)
 
                             Text(effortLabels[level - 1])
                                 .font(.system(size: 9))
-                                .foregroundStyle(Color.appMuted)
+                                .foregroundStyle(Color.appMutedText(colorScheme))
                         }
                     }
                     .buttonStyle(.plain)
@@ -302,6 +317,36 @@ struct AddLogView: View {
         }
         .padding(16)
         .glassCard()
+        .overlay {
+            if !subVM.isSubscribed {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        Button {
+                            showProPaywall = true
+                        } label: {
+                            VStack(spacing: 8) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.appAccent(colorScheme).opacity(0.15))
+                                        .frame(width: 44, height: 44)
+                                    Image(systemName: "crown.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(Color.appAccent(colorScheme))
+                                }
+                                Text("Effort Rating — Pro")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Color.appPrimaryText(colorScheme))
+                                Text("Tap to unlock")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.appMutedText(colorScheme))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+        }
     }
 
     // MARK: - Photo Card
@@ -330,13 +375,13 @@ struct AddLogView: View {
                     Text(viewModel.selectedImageData == nil ? "Add a photo" : "Change photo")
                         .font(.system(size: 14))
                 }
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color.appBorder, style: StrokeStyle(lineWidth: 1.5, dash: [6]))
-                        .background(Color.appSecondary.opacity(0.5).clipShape(RoundedRectangle(cornerRadius: 12)))
+                        .strokeBorder(Color.appBorderDynamic(colorScheme), style: StrokeStyle(lineWidth: 1.5, dash: [6]))
+                        .background(Color.appSurfaceSecondary(colorScheme).opacity(0.5).clipShape(RoundedRectangle(cornerRadius: 12)))
                 )
             }
         }
@@ -351,7 +396,11 @@ struct AddLogView: View {
             noteFocused = false
             Task {
                 if let userId = authVM.currentUserId {
-                    await viewModel.saveLog(userId: userId)
+                    if viewModel.isEditing {
+                        await viewModel.updateLog(userId: userId)
+                    } else {
+                        await viewModel.saveLog(userId: userId)
+                    }
                 } else {
                     viewModel.errorMessage = "You must be signed in to save a log."
                 }
@@ -360,19 +409,19 @@ struct AddLogView: View {
             Group {
                 if viewModel.isLoading {
                     ProgressView()
-                        .tint(Color(red: 0.05, green: 0.2, blue: 0.12))
+                        .tint(Color.appButtonLabel(colorScheme))
                 } else {
-                    Text("Save My 1%")
+                    Text(viewModel.isEditing ? "Update Log" : "Save My 1%")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color(red: 0.05, green: 0.2, blue: 0.12))
+                        .foregroundStyle(Color.appButtonLabel(colorScheme))
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.appPrimary)
-                    .shadow(color: Color.appPrimary.opacity(0.3), radius: 12, y: 4)
+                    .fill(Color.appAccent(colorScheme))
+                    .shadow(color: Color.appAccent(colorScheme).opacity(0.3), radius: 12, y: 4)
             )
         }
         .buttonStyle(.plain)

@@ -55,7 +55,13 @@
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "DC493E9A",
-          "introductoryOffer" : null,
+          "introductoryOffer" : {
+            "internalID" : "A1B2C3D4",
+            "offerIdentifier" : null,
+            "paymentMode" : "freeTrial",
+            "referenceName" : "7-Day Free Trial",
+            "subscriptionPeriod" : "P7D"
+          },
           "localizations" : [
             {
               "description" : "",

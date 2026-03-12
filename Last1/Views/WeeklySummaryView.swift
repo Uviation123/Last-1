@@ -2,12 +2,20 @@ import SwiftUI
 
 struct WeeklySummaryView: View {
     @Environment(AuthViewModel.self) var authVM
+    @Environment(SubscriptionViewModel.self) private var subVM
+    @Environment(\.colorScheme) var colorScheme
     @State private var viewModel = WeeklySummaryViewModel()
     @State private var logsCountAnimated = false
 
+    // Share card state
+    @State private var shareStats: UserStats?
+    @State private var showSharePreview = false
+    private let streakRepo = StreakRepository()
+    private let logRepo    = DailyLogRepository()
+
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            Color.appBackground(colorScheme).ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 12) {
@@ -16,7 +24,7 @@ struct WeeklySummaryView: View {
 
                     if viewModel.isLoading {
                         ProgressView()
-                            .tint(Color.appPrimary)
+                            .tint(Color.appAccent(colorScheme))
                             .padding(40)
                     } else if viewModel.currentWeek == nil {
                         emptyState
@@ -51,12 +59,19 @@ struct WeeklySummaryView: View {
         }
         .task {
             if let userId = authVM.currentUserId {
-                await viewModel.loadData(userId: userId)
+                await loadAllData(userId: userId)
             }
         }
         .refreshable {
             if let userId = authVM.currentUserId {
-                await viewModel.loadData(userId: userId)
+                await loadAllData(userId: userId)
+            }
+        }
+        .sheet(isPresented: $showSharePreview) {
+            if let stats = shareStats {
+                ShareProgressPreviewSheet(stats: stats, showWatermark: !subVM.isSubscribed)
+                    .presentationBackground(.clear)
+                    .presentationDetents([.large])
             }
         }
     }
@@ -64,17 +79,38 @@ struct WeeklySummaryView: View {
     // MARK: - Header
 
     private var pageHeader: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Weekly Summary")
-                .font(.system(size: 24, weight: .bold))
-                .tracking(-0.3)
-                .foregroundStyle(Color.appForeground)
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Weekly Summary")
+                    .font(.system(size: 24, weight: .bold))
+                    .tracking(-0.3)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
 
-            Text(weekRangeText)
-                .font(.system(size: 14))
-                .foregroundStyle(Color.appMuted)
+                Text(weekRangeText)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.appMutedText(colorScheme))
+            }
+
+            Spacer()
+
+            if shareStats != nil {
+                Button {
+                    showSharePreview = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Color.appAccent(colorScheme))
+                        .padding(8)
+                        .background(
+                            Circle()
+                                .fill(Color.appAccent(colorScheme).opacity(0.12))
+                        )
+                }
+                .buttonStyle(.plain)
+                .transition(.scale.combined(with: .opacity))
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(.easeOut(duration: 0.3), value: shareStats != nil)
     }
 
     // MARK: - Total Logs Card
@@ -83,7 +119,7 @@ struct WeeklySummaryView: View {
         ZStack {
             // Background glows
             Circle()
-                .fill(Color.appPrimary.opacity(0.05))
+                .fill(Color.appAccent(colorScheme).opacity(0.05))
                 .frame(width: 100, height: 100)
                 .blur(radius: 20)
                 .offset(x: 60, y: -30)
@@ -100,7 +136,7 @@ struct WeeklySummaryView: View {
 
                 Text("\(viewModel.currentWeek?.logsCount ?? 0)")
                     .font(.system(size: 52, weight: .bold))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                     .contentTransition(.numericText())
 
                 if let lastWeekCount = lastWeekCount, lastWeekCount > 0 {
@@ -114,7 +150,7 @@ struct WeeklySummaryView: View {
                         Text("\(change >= 0 ? "+" : "")\(pct)% vs last week")
                             .font(.system(size: 12, weight: .medium))
                     }
-                    .foregroundStyle(change >= 0 ? Color.appPrimary : Color.chart4)
+                    .foregroundStyle(change >= 0 ? Color.appAccent(colorScheme) : Color.chart4)
                 }
             }
             .multilineTextAlignment(.center)
@@ -147,11 +183,11 @@ struct WeeklySummaryView: View {
 
                 Text(category.displayName)
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
 
                 Text("Your top area this week — keep the momentum going.")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
                     .lineSpacing(2)
             }
 
@@ -184,11 +220,11 @@ struct WeeklySummaryView: View {
 
                 Text(category.displayName)
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
 
                 Text(viewModel.suggestedFocus)
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
                     .lineSpacing(2)
             }
 
@@ -204,7 +240,7 @@ struct WeeklySummaryView: View {
         ZStack {
             // Subtle gradient overlay
             LinearGradient(
-                colors: [Color.appPrimary.opacity(0.06), .clear],
+                colors: [Color.appAccent(colorScheme).opacity(0.06), .clear],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -214,12 +250,12 @@ struct WeeklySummaryView: View {
             VStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.appPrimary.opacity(0.1))
+                        .fill(Color.appAccent(colorScheme).opacity(0.1))
                         .frame(width: 56, height: 56)
 
                     Image(systemName: "rocket.fill")
                         .font(.system(size: 26))
-                        .foregroundStyle(Color.appPrimary)
+                        .foregroundStyle(Color.appAccent(colorScheme))
                 }
 
                 VStack(spacing: 6) {
@@ -228,13 +264,13 @@ struct WeeklySummaryView: View {
 
                     Text("At this rate, you will be \(projectionMultiplier)x better in one year.")
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(Color.appForeground)
+                        .foregroundStyle(Color.appPrimaryText(colorScheme))
                         .multilineTextAlignment(.center)
                         .lineSpacing(2)
 
                     Text("Keep stacking your 1% gains")
                         .font(.system(size: 13))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                 }
             }
             .padding(24)
@@ -248,15 +284,15 @@ struct WeeklySummaryView: View {
         VStack(spacing: 12) {
             Image(systemName: "calendar")
                 .font(.system(size: 44))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
 
             Text("No weekly data yet")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
 
             Text("Complete a week of logging to see your summary")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -291,6 +327,28 @@ struct WeeklySummaryView: View {
         let totalDays = logsPerWeek * weeksPerYear / 7
         let result = pow(1.0 + dailyGain, Double(totalDays))
         return max(Int(result.rounded()), 2)
+    }
+
+    // MARK: - Data Loading
+
+    private func loadAllData(userId: UUID) async {
+        async let weeklyLoad: () = viewModel.loadData(userId: userId)
+        async let streakFetch  = streakRepo.fetchStreak(userId: userId)
+        async let logsFetch    = logRepo.fetchRecentLogs(userId: userId, limit: 9999)
+
+        await weeklyLoad
+        let streak = try? await streakFetch
+        let logs   = (try? await logsFetch) ?? []
+
+        shareStats = UserStats.from(
+            currentStreak:    streak?.currentStreak  ?? 0,
+            longestStreak:    streak?.longestStreak  ?? 0,
+            totalLogs:        logs.count,
+            momentumPercentage: min(Double(streak?.currentStreak ?? 0) / 30.0, 1.0),
+            recentLogs:       logs,
+            topCategoryOverride: viewModel.currentWeek?.strongestCategory ?? "",
+            weeklyLogCount:   viewModel.currentWeek?.logsCount ?? 0
+        )
     }
 }
 

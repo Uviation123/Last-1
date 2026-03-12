@@ -6,6 +6,7 @@ import SwiftUI
 struct OnboardingWelcomeView: View {
     var onNext: () -> Void
 
+    @Environment(\.colorScheme) var colorScheme
     @State private var chartProgress: CGFloat = 0
     @State private var glowPulse = false
     @State private var heroVisible = false
@@ -52,7 +53,7 @@ struct OnboardingWelcomeView: View {
         ZStack {
             // Glow beneath the chart
             Ellipse()
-                .fill(Color.appPrimary.opacity(glowPulse ? 0.18 : 0.10))
+                .fill(Color.appAccent(colorScheme).opacity(glowPulse ? 0.18 : 0.10))
                 .frame(height: 40)
                 .blur(radius: 24)
                 .offset(y: 80)
@@ -61,14 +62,14 @@ struct OnboardingWelcomeView: View {
                 // "1%" badge
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.appPrimary.opacity(0.12))
+                        .fill(Color.appAccent(colorScheme).opacity(0.12))
                         .overlay(
                             RoundedRectangle(cornerRadius: 16)
-                                .strokeBorder(Color.appPrimary.opacity(0.3), lineWidth: 1)
+                                .strokeBorder(Color.appAccent(colorScheme).opacity(0.3), lineWidth: 1)
                         )
                     Text("1%")
                         .font(.system(size: 28, weight: .black))
-                        .foregroundStyle(Color.appPrimary)
+                        .foregroundStyle(Color.appAccent(colorScheme))
                 }
                 .frame(width: 72, height: 72)
                 .scaleEffect(badgeVisible ? 1.0 : 0.6)
@@ -87,14 +88,14 @@ struct OnboardingWelcomeView: View {
         VStack(spacing: 12) {
             Text("1% Better.\nEvery Day.")
                 .font(.system(size: 34, weight: .black))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
                 .multilineTextAlignment(.center)
                 .opacity(heroVisible ? 1 : 0)
                 .offset(y: heroVisible ? 0 : 18)
 
             Text("Small daily actions compound into extraordinary change. The Last 1% is where champions are built.")
                 .font(.system(size: 15))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .multilineTextAlignment(.center)
                 .lineSpacing(5)
                 .opacity(heroVisible ? 1 : 0)
@@ -117,6 +118,7 @@ struct OnboardingWelcomeView: View {
 // Draws a smooth bezier curve that animates from flat-left to a rising arc.
 private struct RisingLineChart: View {
     var progress: CGFloat
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         GeometryReader { geo in
@@ -129,7 +131,7 @@ private struct RisingLineChart: View {
                     ForEach(0..<4) { _ in
                         Spacer()
                         Rectangle()
-                            .fill(Color.appBorder.opacity(0.3))
+                            .fill(Color.appBorderDynamic(colorScheme).opacity(0.3))
                             .frame(height: 1)
                     }
                 }
@@ -138,7 +140,7 @@ private struct RisingLineChart: View {
                 chartFillPath(width: w, height: h, progress: progress)
                     .fill(
                         LinearGradient(
-                            colors: [Color.appPrimary.opacity(0.3), Color.appPrimary.opacity(0.0)],
+                            colors: [Color.appAccent(colorScheme).opacity(0.3), Color.appAccent(colorScheme).opacity(0.0)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -148,7 +150,7 @@ private struct RisingLineChart: View {
                 chartLinePath(width: w, height: h, progress: progress)
                     .stroke(
                         LinearGradient(
-                            colors: [Color.appPrimary.opacity(0.6), Color.appPrimary],
+                            colors: [Color.appAccent(colorScheme).opacity(0.6), Color.appAccent(colorScheme)],
                             startPoint: .leading,
                             endPoint: .trailing
                         ),
@@ -159,9 +161,9 @@ private struct RisingLineChart: View {
                 if progress > 0.05 {
                     let endPt = curveEndPoint(width: w, height: h, progress: progress)
                     Circle()
-                        .fill(Color.appPrimary)
+                        .fill(Color.appAccent(colorScheme))
                         .frame(width: 10, height: 10)
-                        .shadow(color: Color.appPrimary.opacity(0.8), radius: 6)
+                        .shadow(color: Color.appAccent(colorScheme).opacity(0.8), radius: 6)
                         .position(endPt)
                 }
             }
@@ -213,25 +215,26 @@ private struct RisingLineChart: View {
 private struct StatPill: View {
     let value: String
     let label: String
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         VStack(spacing: 2) {
             Text(value)
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color.appPrimary)
+                .foregroundStyle(Color.appAccent(colorScheme))
             Text(label)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .tracking(0.5)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.appSecondary)
+                .fill(Color.appSurfaceSecondary(colorScheme))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color.appBorder.opacity(0.5), lineWidth: 1)
+                        .strokeBorder(Color.appBorderDynamic(colorScheme).opacity(0.5), lineWidth: 1)
                 )
         )
     }

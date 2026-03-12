@@ -8,6 +8,7 @@ struct OnboardingGoalSelectionView: View {
     var onNext: () -> Void
 
     @Environment(OnboardingViewModel.self) private var vm
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         @Bindable var vm = vm
@@ -48,10 +49,10 @@ struct OnboardingGoalSelectionView: View {
         HStack(spacing: 6) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.appPrimary)
+                .foregroundStyle(Color.appAccent(colorScheme))
             Text("\(vm.selectedGoals.count) area\(vm.selectedGoals.count == 1 ? "" : "s") selected")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
         }
         .padding(.top, 4)
     }
@@ -63,6 +64,7 @@ private struct GoalChip: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @Environment(\.colorScheme) var colorScheme
     @State private var pressed = false
 
     var body: some View {
@@ -74,26 +76,26 @@ private struct GoalChip: View {
             HStack(spacing: 8) {
                 ZStack {
                     Circle()
-                        .fill(isSelected ? goal.color.opacity(0.25) : Color.appSecondary)
+                        .fill(isSelected ? goal.color.opacity(0.25) : Color.appSurfaceSecondary(colorScheme))
                         .frame(width: 32, height: 32)
                     Image(systemName: goal.icon)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(isSelected ? goal.color : Color.appMuted)
+                        .foregroundStyle(isSelected ? goal.color : Color.appMutedText(colorScheme))
                 }
 
                 Text(goal.label)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(isSelected ? Color.appForeground : Color.appMuted)
+                    .foregroundStyle(isSelected ? Color.appPrimaryText(colorScheme) : Color.appMutedText(colorScheme))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? goal.color.opacity(0.12) : Color.appCard)
+                    .fill(isSelected ? goal.color.opacity(0.12) : Color.appSurface(colorScheme))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .strokeBorder(
-                                isSelected ? goal.color.opacity(0.6) : Color.appBorder.opacity(0.4),
+                                isSelected ? goal.color.opacity(0.6) : Color.appBorderDynamic(colorScheme).opacity(0.4),
                                 lineWidth: 1
                             )
                     )

@@ -7,12 +7,13 @@ private enum AuthTab: Int {
 
 struct LoginView: View {
     @Environment(AuthViewModel.self) var authVM
+    @Environment(\.colorScheme) var colorScheme
     @State private var activeTab: AuthTab = .signIn
     @State private var previousTab: AuthTab = .signIn
 
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            Color.appBackground(colorScheme).ignoresSafeArea()
 
             if authVM.authMode == .verifyEmail {
                 VerifyEmailScreen()
@@ -25,20 +26,20 @@ struct LoginView: View {
                         VStack(spacing: 12) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 18)
-                                    .fill(Color.appSecondary)
+                                    .fill(Color.appSurfaceSecondary(colorScheme))
                                     .frame(width: 72, height: 72)
                                 Image(systemName: "wand.and.stars")
                                     .font(.system(size: 32, weight: .medium))
-                                    .foregroundStyle(Color.appPrimary)
+                                    .foregroundStyle(Color.appAccent(colorScheme))
                             }
 
                             Text("Last 1%")
                                 .font(.system(size: 30, weight: .bold, design: .rounded))
-                                .foregroundStyle(Color.appForeground)
+                                .foregroundStyle(Color.appPrimaryText(colorScheme))
 
                             Text("Tiny gains. Massive results.")
                                 .font(.subheadline)
-                                .foregroundStyle(Color.appMuted)
+                                .foregroundStyle(Color.appMutedText(colorScheme))
                         }
 
                         // Tab Switcher
@@ -84,10 +85,14 @@ struct LoginView: View {
                         .padding(20)
                         .background(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.appCard)
+                                .fill(Color.appSurface(colorScheme))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 20)
-                                        .strokeBorder(Color.appBorder, lineWidth: 1)
+                                        .strokeBorder(Color.appBorderDynamic(colorScheme), lineWidth: 1)
+                                )
+                                .shadow(
+                                    color: colorScheme == .light ? .black.opacity(0.06) : .clear,
+                                    radius: 8, y: 2
                                 )
                         )
                         .padding(.horizontal, 20)
@@ -116,6 +121,7 @@ private struct TabSwitcher: View {
     @Binding var activeTab: AuthTab
     let onTabChange: (AuthTab) -> Void
     @Namespace private var tabNamespace
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         HStack(spacing: 0) {
@@ -130,13 +136,13 @@ private struct TabSwitcher: View {
                 } label: {
                     Text(label)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(isActive ? Color(red: 0.08, green: 0.08, blue: 0.1) : Color.appMuted)
+                        .foregroundStyle(isActive ? Color.appButtonLabel(colorScheme) : Color.appMutedText(colorScheme))
                         .frame(maxWidth: .infinity)
                         .frame(height: 38)
                         .background {
                             if isActive {
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color.appPrimary)
+                                    .fill(Color.appAccent(colorScheme))
                                     .matchedGeometryEffect(id: "tabPill", in: tabNamespace)
                             }
                         }
@@ -145,7 +151,7 @@ private struct TabSwitcher: View {
             }
         }
         .padding(4)
-        .background(Color.appSecondary, in: RoundedRectangle(cornerRadius: 14))
+        .background(Color.appSurfaceSecondary(colorScheme), in: RoundedRectangle(cornerRadius: 14))
     }
 }
 
@@ -153,6 +159,7 @@ private struct TabSwitcher: View {
 
 private struct SignInFormContent: View {
     @Environment(AuthViewModel.self) var authVM
+    @Environment(\.colorScheme) var colorScheme
     @FocusState private var focusedField: AuthInputField?
     @State private var showPassword = false
 
@@ -180,11 +187,11 @@ private struct SignInFormContent: View {
                 HStack {
                     Text("Password")
                         .font(.caption)
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                     Spacer()
                     Button("Forgot?") {}
                         .font(.caption)
-                        .foregroundStyle(Color.appPrimary)
+                        .foregroundStyle(Color.appAccent(colorScheme))
                 }
 
                 PasswordField(
@@ -204,7 +211,7 @@ private struct SignInFormContent: View {
                 HStack(spacing: 8) {
                     if authVM.isLoading {
                         ProgressView()
-                            .tint(Color(red: 0.08, green: 0.08, blue: 0.1))
+                            .tint(Color.appButtonLabel(colorScheme))
                     } else {
                         Text("Sign In")
                             .fontWeight(.semibold)
@@ -212,10 +219,10 @@ private struct SignInFormContent: View {
                             .fontWeight(.semibold)
                     }
                 }
-                .foregroundStyle(Color(red: 0.08, green: 0.08, blue: 0.1))
+                .foregroundStyle(Color.appButtonLabel(colorScheme))
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
-                .background(Color.appPrimary, in: RoundedRectangle(cornerRadius: 14))
+                .background(Color.appAccent(colorScheme), in: RoundedRectangle(cornerRadius: 14))
             }
             .disabled(authVM.isLoading || authVM.email.isEmpty || authVM.password.isEmpty)
             .opacity((authVM.isLoading || authVM.email.isEmpty || authVM.password.isEmpty) ? 0.6 : 1)
@@ -227,6 +234,7 @@ private struct SignInFormContent: View {
 
 private struct SignUpFormContent: View {
     @Environment(AuthViewModel.self) var authVM
+    @Environment(\.colorScheme) var colorScheme
     @FocusState private var focusedField: AuthInputField?
     @State private var showPassword = false
 
@@ -281,7 +289,7 @@ private struct SignUpFormContent: View {
                 HStack(spacing: 8) {
                     if authVM.isLoading {
                         ProgressView()
-                            .tint(Color(red: 0.08, green: 0.08, blue: 0.1))
+                            .tint(Color.appButtonLabel(colorScheme))
                     } else {
                         Text("Create Account")
                             .fontWeight(.semibold)
@@ -289,10 +297,10 @@ private struct SignUpFormContent: View {
                             .fontWeight(.semibold)
                     }
                 }
-                .foregroundStyle(Color(red: 0.08, green: 0.08, blue: 0.1))
+                .foregroundStyle(Color.appButtonLabel(colorScheme))
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
-                .background(Color.appPrimary, in: RoundedRectangle(cornerRadius: 14))
+                .background(Color.appAccent(colorScheme), in: RoundedRectangle(cornerRadius: 14))
             }
             .disabled(authVM.isLoading || authVM.email.isEmpty || authVM.password.isEmpty)
             .opacity((authVM.isLoading || authVM.email.isEmpty || authVM.password.isEmpty) ? 0.6 : 1)
@@ -304,6 +312,7 @@ private struct SignUpFormContent: View {
 
 private struct VerifyEmailScreen: View {
     @Environment(AuthViewModel.self) var authVM
+    @Environment(\.colorScheme) var colorScheme
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -316,33 +325,33 @@ private struct VerifyEmailScreen: View {
                 VStack(spacing: 12) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 18)
-                            .fill(Color.appSecondary)
+                            .fill(Color.appSurfaceSecondary(colorScheme))
                             .frame(width: 72, height: 72)
                         Image(systemName: "envelope.badge.fill")
                             .font(.system(size: 30, weight: .medium))
-                            .foregroundStyle(Color.appPrimary)
+                            .foregroundStyle(Color.appAccent(colorScheme))
                     }
 
                     Text("Check your email")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.appForeground)
+                        .foregroundStyle(Color.appPrimaryText(colorScheme))
 
                     Text("We sent a verification code to\n\(authVM.email)")
                         .font(.subheadline)
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                         .multilineTextAlignment(.center)
                 }
 
                 VStack(spacing: 16) {
-                    TextField("6-digit code", text: $authVM.otpCode)
+                    TextField("8-digit code", text: $authVM.otpCode)
                         .keyboardType(.numberPad)
                         .textContentType(.oneTimeCode)
                         .multilineTextAlignment(.center)
                         .focused($focused)
                         .font(.title2.monospaced())
-                        .foregroundStyle(Color.appForeground)
+                        .foregroundStyle(Color.appPrimaryText(colorScheme))
                         .padding()
-                        .background(Color.appSecondary, in: RoundedRectangle(cornerRadius: 14))
+                        .background(Color.appFieldBackground(colorScheme), in: RoundedRectangle(cornerRadius: 14))
 
                     if let error = authVM.errorMessage {
                         Text(error)
@@ -357,7 +366,7 @@ private struct VerifyEmailScreen: View {
                         HStack(spacing: 8) {
                             if authVM.isLoading {
                                 ProgressView()
-                                    .tint(Color(red: 0.08, green: 0.08, blue: 0.1))
+                                    .tint(Color.appButtonLabel(colorScheme))
                             } else {
                                 Text("Verify Email")
                                     .fontWeight(.semibold)
@@ -365,10 +374,10 @@ private struct VerifyEmailScreen: View {
                                     .fontWeight(.semibold)
                             }
                         }
-                        .foregroundStyle(Color(red: 0.08, green: 0.08, blue: 0.1))
+                        .foregroundStyle(Color.appButtonLabel(colorScheme))
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(Color.appPrimary, in: RoundedRectangle(cornerRadius: 14))
+                        .background(Color.appAccent(colorScheme), in: RoundedRectangle(cornerRadius: 14))
                     }
                     .disabled(authVM.isLoading || authVM.otpCode.isEmpty)
                     .opacity((authVM.isLoading || authVM.otpCode.isEmpty) ? 0.6 : 1)
@@ -379,15 +388,19 @@ private struct VerifyEmailScreen: View {
                         authVM.resetError()
                     }
                     .font(.subheadline)
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
                 }
                 .padding(20)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.appCard)
+                        .fill(Color.appSurface(colorScheme))
                         .overlay(
                             RoundedRectangle(cornerRadius: 20)
-                                .strokeBorder(Color.appBorder, lineWidth: 1)
+                                .strokeBorder(Color.appBorderDynamic(colorScheme), lineWidth: 1)
+                        )
+                        .shadow(
+                            color: colorScheme == .light ? .black.opacity(0.06) : .clear,
+                            radius: 8, y: 2
                         )
                 )
                 .padding(.horizontal, 20)
@@ -400,6 +413,7 @@ private struct VerifyEmailScreen: View {
 
 private struct SocialButtonsRow: View {
     @Environment(AuthViewModel.self) var authVM
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         HStack(spacing: 12) {
@@ -414,14 +428,14 @@ private struct SocialButtonsRow: View {
                         .frame(width: 18, height: 18)
                     Text("Google")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.appForeground)
+                        .foregroundStyle(Color.appPrimaryText(colorScheme))
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
-                .background(Color.appSecondary, in: RoundedRectangle(cornerRadius: 14))
+                .background(Color.appSurfaceSecondary(colorScheme), in: RoundedRectangle(cornerRadius: 14))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(Color.appBorder, lineWidth: 1)
+                        .strokeBorder(Color.appBorderDynamic(colorScheme), lineWidth: 1)
                 )
             }
             .disabled(authVM.isLoading)
@@ -434,6 +448,7 @@ private struct SocialButtonsRow: View {
 
 private struct AppleSignInButton: View {
     @Environment(AuthViewModel.self) var authVM
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         ZStack {
@@ -441,17 +456,17 @@ private struct AppleSignInButton: View {
             HStack(spacing: 8) {
                 Image(systemName: "apple.logo")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                 Text("Apple")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
             }
             .frame(maxWidth: .infinity)
             .frame(height: 52)
-            .background(Color.appSecondary, in: RoundedRectangle(cornerRadius: 14))
+            .background(Color.appSurfaceSecondary(colorScheme), in: RoundedRectangle(cornerRadius: 14))
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Color.appBorder, lineWidth: 1)
+                    .strokeBorder(Color.appBorderDynamic(colorScheme), lineWidth: 1)
             )
 
             // Invisible Apple button on top for App Store compliance
@@ -473,16 +488,18 @@ private struct AppleSignInButton: View {
 // MARK: - Or Divider
 
 private struct OrDivider: View {
+    @Environment(\.colorScheme) var colorScheme
+
     var body: some View {
         HStack(spacing: 12) {
             Rectangle()
-                .fill(Color.appBorder)
+                .fill(Color.appBorderDynamic(colorScheme))
                 .frame(height: 1)
             Text("or")
                 .font(.caption)
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
             Rectangle()
-                .fill(Color.appBorder)
+                .fill(Color.appBorderDynamic(colorScheme))
                 .frame(height: 1)
         }
     }
@@ -491,11 +508,16 @@ private struct OrDivider: View {
 // MARK: - Terms Footer
 
 private struct TermsFooter: View {
+    @Environment(\.colorScheme) var colorScheme
+
     var body: some View {
-        Text("By continuing, you agree to our ") +
-        Text("Terms").underline().foregroundColor(Color.appPrimary) +
-        Text(" and ") +
-        Text("Privacy Policy").underline().foregroundColor(Color.appPrimary)
+        (Text("By continuing, you agree to our ")
+         + Text("Terms").underline().foregroundColor(Color.appAccent(colorScheme))
+         + Text(" and ")
+         + Text("Privacy Policy").underline().foregroundColor(Color.appAccent(colorScheme)))
+            .font(.caption)
+            .foregroundStyle(Color.appMutedText(colorScheme))
+            .multilineTextAlignment(.center)
     }
 }
 
@@ -508,12 +530,13 @@ private enum AuthInputField {
 private struct LabeledField<Content: View>: View {
     let label: String
     @ViewBuilder let content: () -> Content
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.caption)
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
             content()
         }
     }
@@ -525,23 +548,24 @@ private struct IconTextField: View {
     @Binding var text: String
     var focused: FocusState<AuthInputField?>.Binding
     let field: AuthInputField
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 15))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .frame(width: 20)
             TextField(placeholder, text: $text)
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
                 .focused(focused, equals: field)
         }
         .padding(.horizontal, 14)
         .frame(height: 48)
-        .background(Color.appSecondary, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.appFieldBackground(colorScheme), in: RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color.appBorder.opacity(0.6), lineWidth: 1)
+                .strokeBorder(Color.appBorderDynamic(colorScheme).opacity(0.6), lineWidth: 1)
         )
     }
 }
@@ -552,21 +576,22 @@ private struct PasswordField: View {
     @Binding var showPassword: Bool
     var focused: FocusState<AuthInputField?>.Binding
     let field: AuthInputField
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "lock")
                 .font(.system(size: 15))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .frame(width: 20)
 
             if showPassword {
                 TextField(placeholder, text: $text)
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                     .focused(focused, equals: field)
             } else {
                 SecureField(placeholder, text: $text)
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                     .focused(focused, equals: field)
             }
 
@@ -575,15 +600,15 @@ private struct PasswordField: View {
             } label: {
                 Image(systemName: showPassword ? "eye.slash" : "eye")
                     .font(.system(size: 15))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
         }
         .padding(.horizontal, 14)
         .frame(height: 48)
-        .background(Color.appSecondary, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.appFieldBackground(colorScheme), in: RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color.appBorder.opacity(0.6), lineWidth: 1)
+                .strokeBorder(Color.appBorderDynamic(colorScheme).opacity(0.6), lineWidth: 1)
         )
     }
 }

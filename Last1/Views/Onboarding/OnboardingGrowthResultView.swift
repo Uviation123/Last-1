@@ -8,6 +8,7 @@ struct OnboardingGrowthResultView: View {
     var onNext: () -> Void
 
     @Environment(OnboardingViewModel.self) private var vm
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var momentumProgress: Double = 0
     @State private var streakVisible = false
@@ -72,30 +73,30 @@ struct OnboardingGrowthResultView: View {
             HStack {
                 Text("Projected Momentum")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
                     .tracking(0.5)
                 Spacer()
                 Text("30 days")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
 
             // Animated momentum bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.appSecondary)
+                        .fill(Color.appSurfaceSecondary(colorScheme))
 
                     Capsule()
                         .fill(
                             LinearGradient(
-                                colors: [Color.appPrimary.opacity(0.7), Color.appPrimary],
+                                colors: [Color.appAccent(colorScheme).opacity(0.7), Color.appAccent(colorScheme)],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
                         .frame(width: geo.size.width * momentumProgress)
-                        .shadow(color: Color.appPrimary.opacity(0.5), radius: 8)
+                        .shadow(color: Color.appAccent(colorScheme).opacity(0.5), radius: 8)
                 }
             }
             .frame(height: 10)
@@ -104,27 +105,27 @@ struct OnboardingGrowthResultView: View {
             HStack {
                 Text("Day 1")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
                 Spacer()
 
                 // Animated percentage label
                 Text("\(Int(momentumProgress * 100))% potential")
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Color.appPrimary)
+                    .foregroundStyle(Color.appAccent(colorScheme))
 
                 Spacer()
                 Text("Day 30")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
 
             // Streak projection row
             if streakVisible {
-                Divider().overlay(Color.appBorder.opacity(0.4))
+                Divider().overlay(Color.appBorderDynamic(colorScheme).opacity(0.4))
 
                 HStack(spacing: 20) {
                     ProjectionStat(value: "30", label: "day streak", icon: "flame.fill", color: .orange)
-                    ProjectionStat(value: "37x", label: "compounded", icon: "chart.line.uptrend.xyaxis", color: Color.appPrimary)
+                    ProjectionStat(value: "37x", label: "compounded", icon: "chart.line.uptrend.xyaxis", color: Color.appAccent(colorScheme))
                     ProjectionStat(value: "1%", label: "every day", icon: "star.fill", color: .yellow)
                 }
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -140,7 +141,7 @@ struct OnboardingGrowthResultView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Your Focus Areas")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .tracking(0.5)
 
             let selectedGoalObjects = OnboardingGoal.all.filter { vm.selectedGoals.contains($0.id) }
@@ -153,7 +154,7 @@ struct OnboardingGrowthResultView: View {
                             .foregroundStyle(goal.color)
                         Text(goal.label)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Color.appForeground.opacity(0.85))
+                            .foregroundStyle(Color.appPrimaryText(colorScheme).opacity(0.85))
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -176,7 +177,7 @@ struct OnboardingGrowthResultView: View {
         let accentColor: Color = {
             switch level {
             case .light:    return Color(red: 0.4, green: 0.8, blue: 1.0)
-            case .moderate: return Color.appPrimary
+            case .moderate: return Color.appAccent(colorScheme)
             case .allIn:    return Color(red: 1.0, green: 0.6, blue: 0.3)
             }
         }()
@@ -194,10 +195,10 @@ struct OnboardingGrowthResultView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Commitment: \(level.label)")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                 Text(level.description)
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
 
             Spacer()
@@ -219,17 +220,17 @@ struct OnboardingGrowthResultView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Your Transformation")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .tracking(0.5)
 
             HStack(spacing: 8) {
                 Image(systemName: "arrow.right")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Color.appPrimary)
+                    .foregroundStyle(Color.appAccent(colorScheme))
 
                 Text(vm.desiredIdentity)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                     .lineLimit(3)
             }
         }
@@ -244,6 +245,7 @@ private struct ProjectionStat: View {
     let label: String
     let icon: String
     let color: Color
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(spacing: 4) {
@@ -252,10 +254,10 @@ private struct ProjectionStat: View {
                 .foregroundStyle(color)
             Text(value)
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
             Text(label)
                 .font(.system(size: 10))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)

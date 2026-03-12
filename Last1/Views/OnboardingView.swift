@@ -14,9 +14,11 @@ struct OnboardingView: View {
     // Total number of screens in the flow
     private let totalScreens = 8
 
+    @Environment(\.colorScheme) var colorScheme
+
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            Color.appBackground(colorScheme).ignoresSafeArea()
 
             // Ambient background glow that persists across screens
             AmbientGlow(color: .appPrimary, size: 300)
@@ -33,7 +35,6 @@ struct OnboardingView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .preferredColorScheme(.dark)
         .environment(vm)
     }
 
@@ -52,11 +53,11 @@ struct OnboardingView: View {
 
     private func progressColor(for index: Int) -> Color {
         if index < currentScreen {
-            return Color.appPrimary.opacity(0.5)
+            return Color.appAccent(colorScheme).opacity(0.5)
         } else if index == currentScreen {
-            return Color.appPrimary
+            return Color.appAccent(colorScheme)
         } else {
-            return Color(white: 0.25)
+            return Color.appMutedText(colorScheme)
         }
     }
 
@@ -168,6 +169,8 @@ struct OnboardingContinueButton: View {
     let isEnabled: Bool
     let action: () -> Void
 
+    @Environment(\.colorScheme) var colorScheme
+
     init(_ title: String = "Continue", isEnabled: Bool = true, action: @escaping () -> Void) {
         self.title = title
         self.isEnabled = isEnabled
@@ -182,14 +185,14 @@ struct OnboardingContinueButton: View {
                 Image(systemName: "arrow.right")
                     .font(.system(size: 14, weight: .semibold))
             }
-            .foregroundStyle(Color(red: 0.05, green: 0.2, blue: 0.12))
+            .foregroundStyle(Color.appButtonLabel(colorScheme))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 17)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(isEnabled ? Color.appPrimary : Color.appSecondary)
+                    .fill(isEnabled ? Color.appAccent(colorScheme) : Color.appSurfaceSecondary(colorScheme))
                     .shadow(
-                        color: isEnabled ? Color.appPrimary.opacity(0.35) : .clear,
+                        color: isEnabled ? Color.appAccent(colorScheme).opacity(0.35) : .clear,
                         radius: 14,
                         y: 4
                     )
@@ -210,6 +213,8 @@ struct OnboardingScreenShell<Content: View>: View {
     let continueTitle: String
     let isContinueEnabled: Bool
     let onContinue: () -> Void
+
+    @Environment(\.colorScheme) var colorScheme
 
     init(
         title: String,
@@ -233,13 +238,13 @@ struct OnboardingScreenShell<Content: View>: View {
             VStack(spacing: 8) {
                 Text(title)
                     .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                     .multilineTextAlignment(.center)
                     .slideIn(delay: 0.05)
 
                 Text(subtitle)
                     .font(.system(size: 14))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
                     .slideIn(delay: 0.1)

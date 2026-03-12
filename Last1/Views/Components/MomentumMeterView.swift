@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MomentumMeterView: View {
     let percentage: Double
+    @Environment(\.colorScheme) private var colorScheme
 
     private var trimEnd: Double {
         min(max(percentage, 0), 1)
@@ -10,13 +11,13 @@ struct MomentumMeterView: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.gray.opacity(0.2), lineWidth: 12)
+                .stroke(Color.appSurfaceSecondary(colorScheme), lineWidth: 12)
 
             Circle()
                 .trim(from: 0, to: trimEnd)
                 .stroke(
                     AngularGradient(
-                        gradient: Gradient(colors: [.blue, .purple, .pink]),
+                        gradient: Gradient(colors: [Color.appAccent(colorScheme).opacity(0.6), Color.appAccent(colorScheme)]),
                         center: .center
                     ),
                     style: StrokeStyle(lineWidth: 12, lineCap: .round)
@@ -27,10 +28,11 @@ struct MomentumMeterView: View {
             VStack(spacing: 4) {
                 Text("\(Int(percentage * 100))%")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
 
                 Text("Momentum")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
         }
     }

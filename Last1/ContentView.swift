@@ -24,6 +24,7 @@ enum AppTab: CaseIterable {
 
 struct ContentView: View {
     @Environment(AuthViewModel.self) var authVM
+    @Environment(\.colorScheme) var colorScheme
     @State private var activeTab: AppTab = .home
     @State private var showAddLog = false
 
@@ -40,7 +41,7 @@ struct ContentView: View {
 
     private var mainTabInterface: some View {
         ZStack(alignment: .bottom) {
-            Color.appBackground.ignoresSafeArea()
+            Color.appBackground(colorScheme).ignoresSafeArea()
 
             // Screen content
             Group {
@@ -88,11 +89,15 @@ struct ContentView: View {
         .padding(.bottom, 28)
         .background(
             Rectangle()
-                .fill(Color.appSecondary.opacity(0.6))
+                .fill(colorScheme == .dark
+                      ? Color.appSecondary.opacity(0.6)
+                      : Color.appTabBar(colorScheme))
                 .background(.ultraThinMaterial)
                 .overlay(alignment: .top) {
                     Rectangle()
-                        .fill(Color.glassBorder.opacity(0.3))
+                        .fill(colorScheme == .dark
+                              ? Color.glassBorder.opacity(0.3)
+                              : Color.black.opacity(0.06))
                         .frame(height: 0.5)
                 }
                 .ignoresSafeArea(edges: .bottom)
@@ -111,18 +116,18 @@ struct ContentView: View {
                 ZStack(alignment: .top) {
                     // Active pill indicator at top
                     Capsule()
-                        .fill(isActive ? Color.appPrimary : .clear)
+                        .fill(isActive ? Color.appAccent(colorScheme) : .clear)
                         .frame(width: 20, height: 3)
                         .offset(y: -6)
 
                     VStack(spacing: 3) {
                         Image(systemName: tab.icon)
                             .font(.system(size: 20))
-                            .foregroundStyle(isActive ? Color.appPrimary : Color.appMuted)
+                            .foregroundStyle(isActive ? Color.appAccent(colorScheme) : Color.appMutedText(colorScheme))
 
                         Text(tab.label)
                             .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(isActive ? Color.appPrimary : Color.appMuted)
+                            .foregroundStyle(isActive ? Color.appAccent(colorScheme) : Color.appMutedText(colorScheme))
                     }
                     .padding(.top, 2)
                 }
@@ -139,13 +144,13 @@ struct ContentView: View {
         } label: {
             ZStack {
                 Circle()
-                    .fill(Color.appPrimary)
+                    .fill(Color.appAccent(colorScheme))
                     .frame(width: 44, height: 44)
-                    .shadow(color: Color.appPrimary.opacity(0.4), radius: 10, y: 4)
+                    .shadow(color: Color.appAccent(colorScheme).opacity(0.4), radius: 10, y: 4)
 
                 Image(systemName: "plus")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.05, green: 0.2, blue: 0.12))
+                    .foregroundStyle(Color.appButtonLabel(colorScheme))
             }
         }
         .buttonStyle(.plain)

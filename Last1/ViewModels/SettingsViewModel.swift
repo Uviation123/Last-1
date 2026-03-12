@@ -45,6 +45,7 @@ final class SettingsViewModel {
     var reminderTime: Date = Calendar.current.date(bySettingHour: 20, minute: 0, second: 0, of: Date()) ?? Date()
     var motivationalNudgesEnabled: Bool = false
     var streakAlertEnabled: Bool = false
+    var streakBrokenAlertEnabled: Bool = false
 
     // Set to true when the user tried to enable notifications but permission was denied
     var notificationPermissionDenied: Bool = false
@@ -60,10 +61,11 @@ final class SettingsViewModel {
 
     // UserDefaults keys for notification prefs
     private enum NotifKey {
-        static let dailyReminder   = "settings_dailyReminderEnabled"
-        static let reminderTime    = "settings_reminderTime"
-        static let nudges          = "settings_motivationalNudgesEnabled"
-        static let streakAlert     = "settings_streakAlertEnabled"
+        static let dailyReminder       = "settings_dailyReminderEnabled"
+        static let reminderTime        = "settings_reminderTime"
+        static let nudges              = "settings_motivationalNudgesEnabled"
+        static let streakAlert         = "settings_streakAlertEnabled"
+        static let streakBrokenAlert   = "settings_streakBrokenAlertEnabled"
     }
 
     // MARK: - Init
@@ -157,6 +159,7 @@ final class SettingsViewModel {
         dailyReminderEnabled      = d.bool(forKey: NotifKey.dailyReminder)
         motivationalNudgesEnabled = d.bool(forKey: NotifKey.nudges)
         streakAlertEnabled        = d.bool(forKey: NotifKey.streakAlert)
+        streakBrokenAlertEnabled  = d.bool(forKey: NotifKey.streakBrokenAlert)
         if let saved = d.object(forKey: NotifKey.reminderTime) as? Date {
             reminderTime = saved
         }
@@ -167,6 +170,7 @@ final class SettingsViewModel {
         d.set(dailyReminderEnabled,      forKey: NotifKey.dailyReminder)
         d.set(motivationalNudgesEnabled, forKey: NotifKey.nudges)
         d.set(streakAlertEnabled,        forKey: NotifKey.streakAlert)
+        d.set(streakBrokenAlertEnabled,  forKey: NotifKey.streakBrokenAlert)
         d.set(reminderTime,              forKey: NotifKey.reminderTime)
     }
 
@@ -193,29 +197,15 @@ final class SettingsViewModel {
         }
     }
 
-    /// Schedules or cancels the daily reminder notification based on current state.
+    /// Schedules or cancels the smart daily reminder via NotificationService.
+    /// NotificationService pre-schedules the next 14 days individually and skips
+    /// any day the user has already logged, preventing unnecessary reminders.
     func updateDailyReminder() {
         saveNotificationPrefs()
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["daily_reminder"])
-
-        guard dailyReminderEnabled else { return }
-
-        let content = UNMutableNotificationContent()
-        content.title = "Time for your 1%"
-        content.body  = "A small action today compounds into something great. Log it now."
-        content.sound = .default
-
-        // Extract hour + minute from the user-chosen reminderTime
-        let comps = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
-
-        let request = UNNotificationRequest(
-            identifier: "daily_reminder",
-            content: content,
-            trigger: trigger
+        NotificationService.shared.refreshDailyReminders(
+            enabled: dailyReminderEnabled,
+            at: reminderTime
         )
-        center.add(request)
     }
 
     /// Schedules or cancels a streak-at-risk notification (fires at 9 PM if no log today).
@@ -242,6 +232,18 @@ final class SettingsViewModel {
             trigger: trigger
         )
         center.add(request)
+    }
+
+    /// Schedules or cancels the next-morning streak-broken alert via NotificationService.
+    /// The alert fires at 9 AM the day after the user last logged, only if they haven't
+    /// logged that day. It is rescheduled automatically each time the user saves a log.
+    func updateStreakBrokenAlert() {
+        saveNotificationPrefs()
+        if streakBrokenAlertEnabled {
+            NotificationService.shared.scheduleStreakBrokenAlert()
+        } else {
+            NotificationService.shared.cancelStreakBrokenAlert()
+        }
     }
 
     /// Schedules or cancels motivational nudge notifications (fires at noon, 3 days per week).
@@ -272,6 +274,7 @@ final class SettingsViewModel {
             comps.hour    = 12
             comps.minute  = 0
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
+       
 
             let request = UNNotificationRequest(
                 identifier: ids[i],
@@ -319,5 +322,17 @@ final class SettingsViewModel {
             }
         }
         updateMotivationalNudges()
+    }
+
+    func toggleStreakBrokenAlert() async {
+        if streakBrokenAlertEnabled {
+            let granted = await requestNotificationPermission()
+            if !granted {
+                streakBrokenAlertEnabled = false
+                notificationPermissionDenied = true
+                return
+            }
+        }
+        updateStreakBrokenAlert()
     }
 }

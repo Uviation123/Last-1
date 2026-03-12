@@ -10,6 +10,7 @@ struct OnboardingFirstLogView: View {
     var onNext: () -> Void
 
     @Environment(OnboardingViewModel.self) private var vm
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var photosItem: PhotosPickerItem?
     @State private var showCelebration = false
@@ -107,17 +108,17 @@ struct OnboardingFirstLogView: View {
                 Spacer()
                 Text(effortLabel(for: vm.firstLogEffort))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.appPrimary)
+                    .foregroundStyle(Color.appAccent(colorScheme))
             }
 
             Slider(value: $vm.firstLogEffort, in: 1...5, step: 1)
-                .tint(Color.appPrimary)
+                .tint(Color.appAccent(colorScheme))
 
             // Visual effort dots
             HStack(spacing: 6) {
                 ForEach(1...5, id: \.self) { level in
                     Circle()
-                        .fill(Double(level) <= vm.firstLogEffort ? Color.appPrimary : Color.appSecondary)
+                        .fill(Double(level) <= vm.firstLogEffort ? Color.appAccent(colorScheme) : Color.appSurfaceSecondary(colorScheme))
                         .frame(width: 10, height: 10)
                         .scaleEffect(Double(level) == vm.firstLogEffort.rounded() ? 1.3 : 1.0)
                         .animation(.spring(response: 0.2, dampingFraction: 0.6), value: vm.firstLogEffort)
@@ -150,16 +151,16 @@ struct OnboardingFirstLogView: View {
 
             TextField("What did you do? How did it feel?", text: $vm.firstLogNote, axis: .vertical)
                 .font(.system(size: 14))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
                 .lineLimit(3...5)
-                .tint(Color.appPrimary)
+                .tint(Color.appAccent(colorScheme))
                 .padding(14)
                 .background(
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.appCard)
+                        .fill(Color.appFieldBackground(colorScheme))
                         .overlay(
                             RoundedRectangle(cornerRadius: 14)
-                                .strokeBorder(Color.appBorder.opacity(0.4), lineWidth: 1)
+                                .strokeBorder(Color.appBorderDynamic(colorScheme).opacity(0.4), lineWidth: 1)
                         )
                 )
         }
@@ -187,8 +188,8 @@ struct OnboardingFirstLogView: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 22))
-                            .foregroundStyle(Color.appForeground)
-                            .background(Color.appBackground.clipShape(Circle()))
+                            .foregroundStyle(Color.appPrimaryText(colorScheme))
+                            .background(Color.appBackground(colorScheme).clipShape(Circle()))
                     }
                     .padding(8)
                 }
@@ -197,20 +198,20 @@ struct OnboardingFirstLogView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "camera.fill")
                             .font(.system(size: 16))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                         Text("Add a photo")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 20)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(Color.appCard)
+                            .fill(Color.appFieldBackground(colorScheme))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14)
                                     .strokeBorder(
-                                        Color.appBorder.opacity(0.4),
+                                        Color.appBorderDynamic(colorScheme).opacity(0.4),
                                         style: StrokeStyle(lineWidth: 1, dash: [6, 4])
                                     )
                             )
@@ -259,21 +260,21 @@ struct OnboardingFirstLogView: View {
                     }
                     ZStack {
                         Circle()
-                            .fill(Color.appPrimary.opacity(0.15))
+                            .fill(Color.appAccent(colorScheme).opacity(0.15))
                             .frame(width: 80, height: 80)
                         Image(systemName: "checkmark")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundStyle(Color.appPrimary)
+                            .foregroundStyle(Color.appAccent(colorScheme))
                     }
                 }
 
                 VStack(spacing: 8) {
                     Text("First 1% Logged!")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(Color.appForeground)
+                        .foregroundStyle(Color.appPrimaryText(colorScheme))
                     Text("You've started your momentum. Keep going.")
                         .font(.system(size: 14))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                         .multilineTextAlignment(.center)
                 }
             }
@@ -288,18 +289,19 @@ private struct CategoryTile: View {
     let category: LogCategory
     let isSelected: Bool
     let action: () -> Void
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(isSelected ? category.chartColor.opacity(0.2) : Color.appSecondary)
+                        .fill(isSelected ? category.chartColor.opacity(0.2) : Color.appSurfaceSecondary(colorScheme))
                         .frame(width: 44, height: 44)
 
                     Image(systemName: category.icon)
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(isSelected ? category.chartColor : Color.appMuted)
+                        .foregroundStyle(isSelected ? category.chartColor : Color.appMutedText(colorScheme))
                 }
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
@@ -311,7 +313,7 @@ private struct CategoryTile: View {
 
                 Text(category.displayName)
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(isSelected ? category.chartColor : Color.appMuted)
+                    .foregroundStyle(isSelected ? category.chartColor : Color.appMutedText(colorScheme))
                     .lineLimit(1)
             }
             .scaleEffect(isSelected ? 1.05 : 1.0)
@@ -324,12 +326,13 @@ private struct CategoryTile: View {
 // MARK: - Pulsing Ring
 private struct PulsingRing: View {
     let delay: Double
+    @Environment(\.colorScheme) var colorScheme
     @State private var scale: CGFloat = 0.6
     @State private var opacity: Double = 0.7
 
     var body: some View {
         Circle()
-            .strokeBorder(Color.appPrimary.opacity(opacity), lineWidth: 1.5)
+            .strokeBorder(Color.appAccent(colorScheme).opacity(opacity), lineWidth: 1.5)
             .frame(width: 90, height: 90)
             .scaleEffect(scale)
             .onAppear {

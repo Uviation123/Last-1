@@ -6,6 +6,8 @@
 	<string>230634093420-k0cs7mnuloaf80cvgbokbdjokcjsmkgu.apps.googleusercontent.com</string>
 	<key>GIDServerClientID</key>
 	<string>230634093420-14bc484drkur7jpcm31dkarjg4st0j26.apps.googleusercontent.com</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save your progress card to Photos to share on social media.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

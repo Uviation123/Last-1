@@ -39,6 +39,7 @@ enum AppearanceMode: String, CaseIterable {
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(AuthViewModel.self) private var authVM
     @Environment(SubscriptionViewModel.self) private var subscriptionVM
     @Environment(\.requestReview) private var requestReview
@@ -51,6 +52,7 @@ struct SettingsView: View {
     @State private var showAboutSheet        = false
     @State private var showNotifDeniedAlert  = false
     @State private var isEditingIdentity     = false
+    @State private var showProPaywall        = false
 
     private var selectedMode: AppearanceMode {
         AppearanceMode(rawValue: appearanceModeRaw) ?? .dark
@@ -59,7 +61,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground.ignoresSafeArea()
+                Color.appBackground(colorScheme).ignoresSafeArea()
 
                 ScrollView {
                     VStack(spacing: 16) {
@@ -100,7 +102,7 @@ struct SettingsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.appPrimary)
+                        .foregroundStyle(Color.appAccent(colorScheme))
                 }
             }
         }
@@ -143,6 +145,10 @@ struct SettingsView: View {
         .onChange(of: viewModel.notificationPermissionDenied) { _, denied in
             if denied { showNotifDeniedAlert = true }
         }
+        .sheet(isPresented: $showProPaywall) {
+            OnboardingPaywallView(onComplete: { showProPaywall = false })
+                .environment(subscriptionVM)
+        }
     }
 
     // MARK: - Header Banner
@@ -159,10 +165,10 @@ struct SettingsView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "star.fill")
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.appPrimary)
+                        .foregroundStyle(Color.appAccent(colorScheme))
                     Text("Becoming: \(viewModel.desiredIdentity.isEmpty ? "your best self" : viewModel.desiredIdentity)")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.appForeground)
+                        .foregroundStyle(Color.appPrimaryText(colorScheme))
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
@@ -172,7 +178,7 @@ struct SettingsView: View {
                     Label {
                         Text("\(viewModel.currentStreak) day streak")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                     } icon: {
                         Image(systemName: "flame.fill")
                             .font(.system(size: 11))
@@ -180,17 +186,17 @@ struct SettingsView: View {
                     }
 
                     Circle()
-                        .fill(Color.appMuted.opacity(0.4))
+                        .fill(Color.appMutedText(colorScheme).opacity(0.4))
                         .frame(width: 3, height: 3)
 
                     Label {
                         Text("Momentum: \(viewModel.momentumLabel)")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                     } icon: {
                         Image(systemName: viewModel.momentumIcon)
                             .font(.system(size: 11))
-                            .foregroundStyle(Color.appPrimary)
+                            .foregroundStyle(Color.appAccent(colorScheme))
                     }
                 }
             }
@@ -224,7 +230,7 @@ struct SettingsView: View {
             // "I want to be…" field
             identityRow(
                 icon: "arrow.up.circle.fill",
-                iconColor: Color.appPrimary,
+                iconColor: Color.appAccent(colorScheme),
                 label: "I want to be…",
                 binding: Binding(
                     get: { viewModel.desiredIdentity },
@@ -312,7 +318,7 @@ struct SettingsView: View {
             divider()
             statRow(icon: "trophy.fill",          iconColor: Color.chart3, label: "Longest Streak",      value: "\(viewModel.longestStreak) days")
             divider()
-            statRow(icon: "checkmark.seal.fill",  iconColor: Color.appPrimary, label: "Total 1% Actions", value: "\(viewModel.totalLogs)")
+            statRow(icon: "checkmark.seal.fill",  iconColor: Color.appAccent(colorScheme), label: "Total 1% Actions", value: "\(viewModel.totalLogs)")
             divider()
 
             // Momentum Score row with info button
@@ -320,27 +326,27 @@ struct SettingsView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.appPrimary.opacity(0.15))
+                            .fill(Color.appAccent(colorScheme).opacity(0.15))
                             .frame(width: 32, height: 32)
                         Image(systemName: "bolt.fill")
                             .font(.system(size: 14))
-                            .foregroundStyle(Color.appPrimary)
+                            .foregroundStyle(Color.appAccent(colorScheme))
                     }
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Momentum Score")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.appForeground)
+                            .foregroundStyle(Color.appPrimaryText(colorScheme))
                         Text("Tap to learn more")
                             .font(.system(size: 11))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                     }
                     Spacer()
                     Text(viewModel.momentumLabel)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.appPrimary)
+                        .foregroundStyle(Color.appAccent(colorScheme))
                     Image(systemName: "info.circle")
                         .font(.system(size: 15))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
@@ -354,19 +360,19 @@ struct SettingsView: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.appSecondary)
+                        .fill(Color.appSurfaceSecondary(colorScheme))
                         .frame(width: 32, height: 32)
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 14))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Export Data")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                     Text("Coming soon")
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.appMuted.opacity(0.6))
+                        .foregroundStyle(Color.appMutedText(colorScheme).opacity(0.6))
                 }
                 Spacer()
             }
@@ -379,8 +385,33 @@ struct SettingsView: View {
     // MARK: - Section 3: Notifications
 
     private var notificationsSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let isPro = subscriptionVM.isSubscribed
+
+        return VStack(alignment: .leading, spacing: 0) {
             sectionHeader("Notifications")
+
+            if !isPro {
+                HStack(spacing: 8) {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.appAccent(colorScheme))
+                    Text("All notification features require Pro")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.appMutedText(colorScheme))
+                    Spacer()
+                    Button { showProPaywall = true } label: {
+                        Text("Upgrade")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.appAccent(colorScheme))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.appAccent(colorScheme).opacity(0.07))
+
+                divider()
+            }
 
             // Daily Reminder toggle
             notifToggleRow(
@@ -393,11 +424,13 @@ struct SettingsView: View {
                     set: { viewModel.dailyReminderEnabled = $0
                            Task { await viewModel.toggleDailyReminder() }
                     }
-                )
+                ),
+                isProGated: !isPro,
+                onProTap: { showProPaywall = true }
             )
 
-            // Time picker — only visible when daily reminder is on
-            if viewModel.dailyReminderEnabled {
+            // Time picker — only visible when daily reminder is on (and subscribed)
+            if viewModel.dailyReminderEnabled && isPro {
                 divider()
                 HStack(spacing: 12) {
                     ZStack {
@@ -410,7 +443,7 @@ struct SettingsView: View {
                     }
                     Text("Reminder Time")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.appForeground)
+                        .foregroundStyle(Color.appPrimaryText(colorScheme))
                     Spacer()
                     DatePicker(
                         "",
@@ -423,7 +456,6 @@ struct SettingsView: View {
                         displayedComponents: .hourAndMinute
                     )
                     .labelsHidden()
-                    .colorScheme(.dark)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -444,7 +476,9 @@ struct SettingsView: View {
                     set: { viewModel.motivationalNudgesEnabled = $0
                            Task { await viewModel.toggleMotivationalNudges() }
                     }
-                )
+                ),
+                isProGated: !isPro,
+                onProTap: { showProPaywall = true }
             )
 
             divider()
@@ -460,7 +494,27 @@ struct SettingsView: View {
                     set: { viewModel.streakAlertEnabled = $0
                            Task { await viewModel.toggleStreakAlert() }
                     }
-                )
+                ),
+                isProGated: !isPro,
+                onProTap: { showProPaywall = true }
+            )
+
+            divider()
+
+            // Streak Broken Alert toggle
+            notifToggleRow(
+                icon: "bolt.slash.fill",
+                iconColor: Color.chart3,
+                label: "Streak Broken Alerts",
+                detail: "Morning nudge if you missed yesterday",
+                isOn: Binding(
+                    get: { viewModel.streakBrokenAlertEnabled },
+                    set: { viewModel.streakBrokenAlertEnabled = $0
+                           Task { await viewModel.toggleStreakBrokenAlert() }
+                    }
+                ),
+                isProGated: !isPro,
+                onProTap: { showProPaywall = true }
             )
         }
         .glassCard()
@@ -478,27 +532,27 @@ struct SettingsView: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(subscriptionVM.isSubscribed
-                              ? Color.appPrimary.opacity(0.15)
-                              : Color.appSecondary)
+                              ? Color.appAccent(colorScheme).opacity(0.15)
+                              : Color.appSurfaceSecondary(colorScheme))
                         .frame(width: 32, height: 32)
                     Image(systemName: subscriptionVM.isSubscribed ? "crown.fill" : "person.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(subscriptionVM.isSubscribed ? Color.appPrimary : Color.appMuted)
+                        .foregroundStyle(subscriptionVM.isSubscribed ? Color.appAccent(colorScheme) : Color.appMutedText(colorScheme))
                 }
                 Text("Current Plan")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                 Spacer()
                 Text(subscriptionVM.isSubscribed ? "Pro" : "Free")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(subscriptionVM.isSubscribed ? Color.appPrimary : Color.appMuted)
+                    .foregroundStyle(subscriptionVM.isSubscribed ? Color.appAccent(colorScheme) : Color.appMutedText(colorScheme))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(
                         Capsule().fill(
                             subscriptionVM.isSubscribed
-                            ? Color.appPrimary.opacity(0.15)
-                            : Color.appSecondary
+                            ? Color.appAccent(colorScheme).opacity(0.15)
+                            : Color.appSurfaceSecondary(colorScheme)
                         )
                     )
             }
@@ -535,23 +589,23 @@ struct SettingsView: View {
                 Task { await subscriptionVM.restorePurchases() }
             } label: {
                 HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.appPrimary.opacity(0.12))
-                            .frame(width: 32, height: 32)
-                        if subscriptionVM.isLoading {
-                            ProgressView()
-                                .tint(Color.appPrimary)
-                                .scaleEffect(0.7)
-                        } else {
-                            Image(systemName: "arrow.clockwise.circle.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color.appPrimary)
-                        }
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.appAccent(colorScheme).opacity(0.12))
+                        .frame(width: 32, height: 32)
+                    if subscriptionVM.isLoading {
+                        ProgressView()
+                            .tint(Color.appAccent(colorScheme))
+                            .scaleEffect(0.7)
+                    } else {
+                        Image(systemName: "arrow.clockwise.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.appAccent(colorScheme))
                     }
-                    Text("Restore Purchases")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.appForeground)
+                }
+                Text("Restore Purchases")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                     Spacer()
                 }
                 .padding(.horizontal, 16)
@@ -581,24 +635,24 @@ struct SettingsView: View {
             HStack(spacing: 14) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.appPrimary.opacity(0.15))
+                        .fill(Color.appAccent(colorScheme).opacity(0.15))
                         .frame(width: 44, height: 44)
                     Image(systemName: "crown.fill")
                         .font(.system(size: 20))
-                        .foregroundStyle(Color.appPrimary)
+                        .foregroundStyle(Color.appAccent(colorScheme))
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Upgrade to Pro")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.appForeground)
+                        .foregroundStyle(Color.appPrimaryText(colorScheme))
                     Text("Unlock all features & advanced insights")
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.appPrimary)
+                    .foregroundStyle(Color.appAccent(colorScheme))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -622,24 +676,24 @@ struct SettingsView: View {
                     HStack(spacing: 12) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.appSecondary)
+                                .fill(Color.appSurfaceSecondary(colorScheme))
                                 .frame(width: 32, height: 32)
                             Image(systemName: mode.icon)
                                 .font(.system(size: 14))
-                                .foregroundStyle(Color.appForeground)
+                                .foregroundStyle(Color.appPrimaryText(colorScheme))
                         }
                         Text(mode.label)
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.appForeground)
+                            .foregroundStyle(Color.appPrimaryText(colorScheme))
                         Spacer()
                         if selectedMode == mode {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 18))
-                                .foregroundStyle(Color.appPrimary)
+                                .foregroundStyle(Color.appAccent(colorScheme))
                         } else {
                             Image(systemName: "circle")
                                 .font(.system(size: 18))
-                                .foregroundStyle(Color.appMuted.opacity(0.5))
+                                .foregroundStyle(Color.appMutedText(colorScheme).opacity(0.5))
                         }
                     }
                     .padding(.horizontal, 16)
@@ -664,7 +718,7 @@ struct SettingsView: View {
 
             // About
             Button { showAboutSheet = true } label: {
-                settingsRow(icon: "info.circle.fill", iconColor: Color.appPrimary, label: "About Last 1%", detail: "Mission, version info")
+                settingsRow(icon: "info.circle.fill", iconColor: Color.appAccent(colorScheme), label: "About Last 1%", detail: "Mission, version info")
             }
             .buttonStyle(.plain)
 
@@ -674,15 +728,15 @@ struct SettingsView: View {
             Link(destination: URL(string: "https://last1percent.app/privacy")!) {
                 settingsRow(icon: "lock.shield.fill", iconColor: Color.chart2, label: "Privacy Policy", detail: "")
             }
-            .foregroundStyle(Color.appForeground)
+            .foregroundStyle(Color.appPrimaryText(colorScheme))
 
             divider()
 
             // Terms of Service
             Link(destination: URL(string: "https://last1percent.app/terms")!) {
-                settingsRow(icon: "doc.text.fill", iconColor: Color.appMuted, label: "Terms of Service", detail: "")
+                settingsRow(icon: "doc.text.fill", iconColor: Color.appMutedText(colorScheme), label: "Terms of Service", detail: "")
             }
-            .foregroundStyle(Color.appForeground)
+            .foregroundStyle(Color.appPrimaryText(colorScheme))
 
             divider()
 
@@ -725,7 +779,7 @@ struct SettingsView: View {
                     detail: "Spread the 1% mindset"
                 )
             }
-            .foregroundStyle(Color.appForeground)
+            .foregroundStyle(Color.appPrimaryText(colorScheme))
         }
         .glassCard()
     }
@@ -735,7 +789,7 @@ struct SettingsView: View {
     private var versionFooter: some View {
         Text("Last 1% · v1.0.0")
             .font(.system(size: 11))
-            .foregroundStyle(Color.appMuted.opacity(0.5))
+            .foregroundStyle(Color.appMutedText(colorScheme).opacity(0.5))
             .frame(maxWidth: .infinity)
             .padding(.top, 4)
     }
@@ -745,12 +799,12 @@ struct SettingsView: View {
     private var momentumInfoSheet: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground.ignoresSafeArea()
+                Color.appBackground(colorScheme).ignoresSafeArea()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         momentumInfoCard(
                             icon: "arrow.up.right.circle.fill",
-                            color: Color.appPrimary.opacity(0.8),
+                            color: Color.appAccent(colorScheme).opacity(0.8),
                             title: "Rising",
                             body: "You're in the early phase — under one third of a 30-day pace. Every log counts. Keep showing up."
                         )
@@ -769,7 +823,7 @@ struct SettingsView: View {
 
                         Text("Your Momentum Score reflects your current streak as a percentage of a 30-day consistent pace. It updates automatically as you log.")
                             .font(.system(size: 13))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                             .padding(16)
                             .glassCard()
                     }
@@ -783,7 +837,7 @@ struct SettingsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { showMomentumInfo = false }
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.appPrimary)
+                        .foregroundStyle(Color.appAccent(colorScheme))
                 }
             }
         }
@@ -795,26 +849,26 @@ struct SettingsView: View {
     private var aboutSheet: some View {
         NavigationStack {
             ZStack {
-                Color.appBackground.ignoresSafeArea()
+                Color.appBackground(colorScheme).ignoresSafeArea()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         // App icon placeholder + title
                         HStack(spacing: 14) {
                             ZStack {
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.appPrimary.opacity(0.15))
-                                    .frame(width: 64, height: 64)
-                                Image(systemName: "bolt.circle.fill")
-                                    .font(.system(size: 30))
-                                    .foregroundStyle(Color.appPrimary)
-                            }
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Last 1%")
-                                    .font(.system(size: 20, weight: .bold))
-                                    .foregroundStyle(Color.appForeground)
-                                Text("Version 1.0.0")
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(Color.appMuted)
+                        RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.appAccent(colorScheme).opacity(0.15))
+                                .frame(width: 64, height: 64)
+                            Image(systemName: "bolt.circle.fill")
+                                .font(.system(size: 30))
+                                .foregroundStyle(Color.appAccent(colorScheme))
+                        }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Last 1%")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(Color.appPrimaryText(colorScheme))
+                            Text("Version 1.0.0")
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color.appMutedText(colorScheme))
                             }
                         }
                         .padding(16)
@@ -846,7 +900,7 @@ struct SettingsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { showAboutSheet = false }
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.appPrimary)
+                        .foregroundStyle(Color.appAccent(colorScheme))
                 }
             }
         }
@@ -875,18 +929,18 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                 if !detail.isEmpty {
                     Text(detail)
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                 }
             }
             Spacer()
             if showChevron {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
         }
         .padding(.horizontal, 16)
@@ -907,11 +961,11 @@ struct SettingsView: View {
             }
             Text(label)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
             Spacer()
             Text(value)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -944,11 +998,11 @@ struct SettingsView: View {
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.8)
                     .textCase(.uppercase)
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
                 TextField(placeholder, text: binding, onCommit: { viewModel.saveIdentity() })
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.appForeground)
-                    .tint(Color.appPrimary)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
+                    .tint(Color.appAccent(colorScheme))
                     .submitLabel(.done)
             }
         }
@@ -976,7 +1030,7 @@ struct SettingsView: View {
             }
             Text(label)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
             Spacer()
             Picker(label, selection: selection) {
                 ForEach(options, id: \.0) { value, name in
@@ -984,43 +1038,64 @@ struct SettingsView: View {
                 }
             }
             .labelsHidden()
-            .tint(Color.appPrimary)
+            .tint(Color.appAccent(colorScheme))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
     }
 
-    /// Toggle row for notification preferences
+    /// Toggle row for notification preferences.
+    /// When `isProGated` is true a crown badge replaces the toggle and `onProTap` fires on tap.
     private func notifToggleRow(
         icon: String,
         iconColor: Color,
         label: String,
         detail: String,
-        isOn: Binding<Bool>
+        isOn: Binding<Bool>,
+        isProGated: Bool = false,
+        onProTap: (() -> Void)? = nil
     ) -> some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(iconColor.opacity(0.18))
+                    .fill(iconColor.opacity(isProGated ? 0.10 : 0.18))
                     .frame(width: 32, height: 32)
                 Image(systemName: icon)
                     .font(.system(size: 14))
-                    .foregroundStyle(iconColor)
+                    .foregroundStyle(iconColor.opacity(isProGated ? 0.4 : 1.0))
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme).opacity(isProGated ? 0.5 : 1.0))
                 if !detail.isEmpty {
                     Text(detail)
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.appMuted)
+                        .foregroundStyle(Color.appMutedText(colorScheme))
                 }
             }
             Spacer()
-            Toggle("", isOn: isOn)
-                .labelsHidden()
-                .tint(Color.appPrimary)
+            Group {
+                if isProGated {
+                    Button { onProTap?() } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 9))
+                            Text("Pro")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundStyle(Color.appAccent(colorScheme))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(Color.appAccent(colorScheme).opacity(0.15)))
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Toggle("", isOn: isOn)
+                        .labelsHidden()
+                        .tint(Color.appAccent(colorScheme))
+                }
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -1041,7 +1116,7 @@ struct SettingsView: View {
 
     private func divider() -> some View {
         Rectangle()
-            .fill(Color.glassBorder.opacity(0.3))
+            .fill(Color.appBorderDynamic(colorScheme))
             .frame(height: 0.5)
             .padding(.leading, 60)
     }
@@ -1057,10 +1132,10 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                 Text(body)
                     .font(.system(size: 13))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -1074,15 +1149,15 @@ struct SettingsView: View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 18))
-                .foregroundStyle(Color.appPrimary)
+                .foregroundStyle(Color.appAccent(colorScheme))
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                 Text(body)
                     .font(.system(size: 13))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

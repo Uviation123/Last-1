@@ -9,23 +9,27 @@ struct OnboardingPaywallView: View {
     var onComplete: () -> Void
 
     @Environment(SubscriptionViewModel.self) private var subVM
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var featuresVisible = false
     @State private var ctaVisible = false
     @State private var glowPulse = false
 
-    private let features: [PaywallFeature] = [
-        PaywallFeature(icon: "flame.fill",         color: .orange,  title: "Streak Protection",       description: "Freeze your streak on hard days"),
-        PaywallFeature(icon: "chart.bar.fill",     color: .blue,    title: "Advanced Analytics",       description: "Deep insights into your progress"),
-        PaywallFeature(icon: "bell.badge.fill",    color: .yellow,  title: "Smart Reminders",          description: "AI-timed nudges when you're most likely to log"),
-        PaywallFeature(icon: "person.2.fill",      color: .pink,    title: "Accountability Partners",  description: "Share streaks with friends"),
-        PaywallFeature(icon: "square.and.arrow.up",color: .purple,  title: "Export & Backup",          description: "Download all your data anytime"),
-        PaywallFeature(icon: "wand.and.stars",     color: Color.appPrimary, title: "Unlimited Categories", description: "Log every dimension of your life"),
-    ]
+    private var features: [PaywallFeature] {
+        [
+            PaywallFeature(icon: "tray.full.fill",        color: .blue,    title: "Unlimited Log History",      description: "Access every entry you've ever logged"),
+            PaywallFeature(icon: "bolt.fill",             color: .orange,  title: "Effort Rating on Logs",      description: "Track how hard you pushed each session"),
+            PaywallFeature(icon: "chart.bar.fill",        color: .purple,  title: "30 & 90 Day Growth Charts",  description: "See your long-term progress at a glance"),
+            PaywallFeature(icon: "bell.badge.fill",       color: .yellow,  title: "Daily Reminders",            description: "Never miss a day with timely check-in nudges"),
+            PaywallFeature(icon: "wand.and.stars",        color: Color.appAccent(colorScheme), title: "Motivational Nudges", description: "Personalised messages to keep you going"),
+            PaywallFeature(icon: "flame.fill",            color: .red,     title: "Streak at Risk Alerts",      description: "Get warned before your streak breaks"),
+            PaywallFeature(icon: "exclamationmark.triangle.fill", color: .pink, title: "Broken Streak Alerts", description: "Know instantly when a streak has ended"),
+        ]
+    }
 
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            Color.appBackground(colorScheme).ignoresSafeArea()
 
             // Top glow
             AmbientGlow(color: .appPrimary, size: 280)
@@ -53,7 +57,6 @@ struct OnboardingPaywallView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .onAppear {
             withAnimation(.easeOut(duration: 0.5).delay(0.3)) {
                 featuresVisible = true
@@ -64,6 +67,7 @@ struct OnboardingPaywallView: View {
             withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
                 glowPulse = true
             }
+            Task { await subVM.loadProduct() }
         }
     }
 
@@ -73,13 +77,13 @@ struct OnboardingPaywallView: View {
         VStack(spacing: 12) {
             Text("Unlock Your Full\nPotential")
                 .font(.system(size: 32, weight: .black))
-                .foregroundStyle(Color.appForeground)
+                .foregroundStyle(Color.appPrimaryText(colorScheme))
                 .multilineTextAlignment(.center)
                 .slideIn(delay: 0.05)
 
             Text("Join thousands building unstoppable momentum with Last 1% Pro.")
                 .font(.system(size: 15))
-                .foregroundStyle(Color.appMuted)
+                .foregroundStyle(Color.appMutedText(colorScheme))
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
                 .slideIn(delay: 0.1)
@@ -94,7 +98,7 @@ struct OnboardingPaywallView: View {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(
                         LinearGradient(
-                            colors: [Color.appPrimary.opacity(0.2), Color.appPrimary.opacity(0.08)],
+                            colors: [Color.appAccent(colorScheme).opacity(0.2), Color.appAccent(colorScheme).opacity(0.08)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -103,28 +107,28 @@ struct OnboardingPaywallView: View {
                         RoundedRectangle(cornerRadius: 20)
                             .strokeBorder(
                                 LinearGradient(
-                                    colors: [Color.appPrimary.opacity(0.6), Color.appPrimary.opacity(0.2)],
+                                    colors: [Color.appAccent(colorScheme).opacity(0.6), Color.appAccent(colorScheme).opacity(0.2)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
                                 lineWidth: 1.5
                             )
                     )
-                    .shadow(color: Color.appPrimary.opacity(glowPulse ? 0.25 : 0.10), radius: 20)
+                    .shadow(color: Color.appAccent(colorScheme).opacity(glowPulse ? 0.25 : 0.10), radius: 20)
 
                 HStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
                             Image(systemName: "crown.fill")
                                 .font(.system(size: 14))
-                                .foregroundStyle(Color.appPrimary)
+                                .foregroundStyle(Color.appAccent(colorScheme))
                             Text("7-Day Free Trial")
                                 .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(Color.appForeground)
+                                .foregroundStyle(Color.appPrimaryText(colorScheme))
                         }
                         Text("Then $4.99/month — cancel anytime")
                             .font(.system(size: 13))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                     }
 
                     Spacer()
@@ -132,10 +136,10 @@ struct OnboardingPaywallView: View {
                     VStack(spacing: 2) {
                         Text("FREE")
                             .font(.system(size: 20, weight: .black))
-                            .foregroundStyle(Color.appPrimary)
+                            .foregroundStyle(Color.appAccent(colorScheme))
                         Text("7 days")
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color.appMuted)
+                            .foregroundStyle(Color.appMutedText(colorScheme))
                     }
                 }
                 .padding(20)
@@ -148,7 +152,7 @@ struct OnboardingPaywallView: View {
 
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Everything in Pro")
+            Text("What you get")
                 .sectionLabel()
                 .padding(.bottom, 4)
 
@@ -182,7 +186,7 @@ struct OnboardingPaywallView: View {
                 HStack(spacing: 8) {
                     if subVM.isLoading {
                         ProgressView()
-                            .tint(Color(red: 0.05, green: 0.18, blue: 0.1))
+                            .tint(Color.appButtonLabel(colorScheme))
                     } else {
                         Image(systemName: "crown.fill")
                             .font(.system(size: 14))
@@ -190,19 +194,19 @@ struct OnboardingPaywallView: View {
                             .font(.system(size: 16, weight: .bold))
                     }
                 }
-                .foregroundStyle(Color(red: 0.05, green: 0.18, blue: 0.1))
+                .foregroundStyle(Color.appButtonLabel(colorScheme))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
                         .fill(
                             LinearGradient(
-                                colors: [Color.appPrimary, Color.appPrimary.opacity(0.85)],
+                                colors: [Color.appAccent(colorScheme), Color.appAccent(colorScheme).opacity(0.85)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .shadow(color: Color.appPrimary.opacity(0.45), radius: 16, y: 6)
+                        .shadow(color: Color.appAccent(colorScheme).opacity(0.45), radius: 16, y: 6)
                 )
             }
             .buttonStyle(.plain)
@@ -225,8 +229,8 @@ struct OnboardingPaywallView: View {
             Button(action: onComplete) {
                 Text("Continue for Free")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.appMuted)
-                    .underline(color: Color.appMuted.opacity(0.5))
+                    .foregroundStyle(Color.appMutedText(colorScheme))
+                    .underline(color: Color.appMutedText(colorScheme).opacity(0.5))
             }
             .buttonStyle(.plain)
             .disabled(subVM.isLoading)
@@ -244,7 +248,7 @@ struct OnboardingPaywallView: View {
             } label: {
                 Text("Restore Purchases")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.appMuted.opacity(0.6))
+                    .foregroundStyle(Color.appMutedText(colorScheme).opacity(0.6))
             }
             .buttonStyle(.plain)
             .disabled(subVM.isLoading)
@@ -254,7 +258,7 @@ struct OnboardingPaywallView: View {
             // Legal disclaimer
             Text("No payment now. Cancel before trial ends to avoid being charged.")
                 .font(.system(size: 11))
-                .foregroundStyle(Color.appMuted.opacity(0.5))
+                .foregroundStyle(Color.appMutedText(colorScheme).opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
         }
@@ -273,6 +277,7 @@ private struct PaywallFeature {
 
 private struct FeatureRow: View {
     let feature: PaywallFeature
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 14) {
@@ -288,26 +293,26 @@ private struct FeatureRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(feature.title)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.appForeground)
+                    .foregroundStyle(Color.appPrimaryText(colorScheme))
                 Text(feature.description)
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.appMuted)
+                    .foregroundStyle(Color.appMutedText(colorScheme))
             }
 
             Spacer()
 
             Image(systemName: "checkmark")
                 .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Color.appPrimary)
+                .foregroundStyle(Color.appAccent(colorScheme))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(Color.appCard)
+                .fill(Color.appSurface(colorScheme))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(Color.appBorder.opacity(0.25), lineWidth: 1)
+                        .strokeBorder(Color.appBorderDynamic(colorScheme).opacity(0.25), lineWidth: 1)
                 )
         )
     }

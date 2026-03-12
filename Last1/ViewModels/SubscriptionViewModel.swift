@@ -46,19 +46,40 @@ final class SubscriptionViewModel {
         isSubscribed = await subscribed
     }
 
+    /// Explicitly re-fetches the subscription product. Call from the paywall onAppear
+    /// to ensure the product is available before the user taps "Start Free Trial".
+    func loadProduct() async {
+        guard product == nil else { return }
+        do {
+            product = try await service.fetchProduct()
+        } catch {
+            print("[SubscriptionViewModel] loadProduct failed: \(error)")
+        }
+    }
+
     /// Initiates the StoreKit purchase sheet for the free trial.
     /// Returns true when the purchase completes successfully, false on cancellation or error.
     @discardableResult
     func startFreeTrial() async -> Bool {
         errorMessage = nil
-
-        guard let product else {
-            errorMessage = "Could not load subscription details. Please try again."
-            return false
-        }
-
         isLoading = true
         defer { isLoading = false }
+
+        // Re-fetch the product if it wasn't loaded yet
+        if product == nil {
+            do {
+                product = try await service.fetchProduct()
+            } catch {
+                print("[SubscriptionViewModel] startFreeTrial product fetch failed: \(error)")
+                errorMessage = "Could not load subscription details: \(error.localizedDescription)"
+                return false
+            }
+        }
+
+        guard let product else {
+            errorMessage = "Could not load subscription details. Check that the product ID is correct in App Store Connect."
+            return false
+        }
 
         do {
             let transaction = try await service.purchase(product)
